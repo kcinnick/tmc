@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 import requests
 import re
 
@@ -10,7 +10,13 @@ class User:
         self.messages = None
         self.location = None
 
-    def get_info(self, post=None, url=None):
+    def get_info(self, post:Tag=None, url:str=None):
+        """
+        Retrieves basic user information.
+        TODO: Add method for Post/message parsing
+        TODO: Add logic for parsing from URL.
+        """
+
         if post:
             user_info = post.find('div', class_='messageUserInfo')
             self.username = user_info.find('a', class_='username').text
@@ -23,7 +29,7 @@ class User:
 
 
 class Post:
-    def __init__(self, post):
+    def __init__(self, post: Tag):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
         try:
@@ -40,7 +46,11 @@ class Post:
         self.loves = output_dict.get('Love', 0)
         self.helpful = output_dict.get('Helpful', 0)
 
-    def parse_output_list(self, output_list):
+    def parse_output_list(self, output_list: list):
+        """
+        Helper function for cleanly accessing like/love/helpful counts.
+        """
+
         output_dict = {}
 
         try:
@@ -55,7 +65,11 @@ class Post:
         
         return output_dict
 
-    def get_media(self, post):
+    def get_media(self, post: Tag):
+        """
+        Retrieves media's URL, if any.
+        """
+
         iframe = post.find('iframe')
         if iframe:
             return iframe.get('src')
@@ -65,7 +79,7 @@ class Thread(Post):
     """
     Effectively a Post with a title.
     """
-    def __init__(self, title, post):
+    def __init__(self, title:str, post: Tag):
         super(Thread, self).__init__()
         self.title = title
 
@@ -76,6 +90,10 @@ class ForumScraper:
         self.session.headers.update({'User-Agent': 'https://github.com/kcinnick/tmc'})
     
     def get_number_of_pages_in_thread(self, soup: BeautifulSoup):
+        """
+        Retrieves the number of pages in a thread.
+        """
+
         nav_header = soup.find('span', class_='pageNavHeader')
         
         if nav_header:
@@ -84,6 +102,11 @@ class ForumScraper:
             return 1
     
     def scrape_post_by_id(self, post_id: int=0, thread_id: str=None):
+        """
+        Given a post or thread's ID, retrieves the post's URL
+        and returns a Post object.
+        """
+        
         if post_id:
             url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
         else:
@@ -101,6 +124,11 @@ class ForumScraper:
         return Post(unparsed_post)
     
     def scrape_posts_from_thread(self, url: str=None):
+        """
+        Parses posts in thread as Post objects and
+        returns them in a list.
+        """
+
         posts = []
 
         response = self.session.get(url)
@@ -164,7 +192,7 @@ class ForumScraper:
 
             try:
                 pages = soup.find('a', class_='PageNavNext').find_next('a').text
-            except:
+            except AttributeError:
                 pages = 2
 
             search_results = []
