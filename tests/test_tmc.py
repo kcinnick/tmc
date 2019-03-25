@@ -33,3 +33,22 @@ def test_scrape_posts_from_thread():
 
     posts = forum_scraper.scrape_posts_from_thread(url='https://teslamotorsclub.com/tmc/threads/i-thought-i-would-mention-that-i-think-tesla-has-one-of-the-nicest-websites.14/')
     assert len(posts) == 4
+
+def test_scrape_specific_post_from_thread():
+    forum_scraper = ForumScraper()
+
+    post = forum_scraper.scrape_post_by_id(post_id=3508669)
+    
+    assert post.id == 3508669
+    assert post.username == 'InParadise'
+    assert 'Do you have a referral' in post.message
+
+def test_search_threads_and_posts():
+    forum_scraper = ForumScraper()
+    search_results = forum_scraper.search_threads_and_posts(
+        keywords=['tires', 'spike'], posted_by=[], newer_than=None,
+        minimum_replies=None, thread_prefixes=[],
+        search_in_forums=[], search_child_forums=False,
+        most_recent=True, most_replies=False)
+    
+    assert len(search_results) > 40

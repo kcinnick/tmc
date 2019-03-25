@@ -21,11 +21,15 @@ class User:
             self.messages = ([], extra_user_info['Messages'])
             self.location = extra_user_info['Location']
 
+
 class Post:
     def __init__(self, post):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
-        self.posted_at = post.find('span', class_='DateTime').text
+        try:
+            self.posted_at = post.find('span', class_='DateTime').text
+        except AttributeError:
+            self.posted_at = post.find('abbr', class_='DateTime').text
         self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace('Click to expand...', '\n"').strip()
         self.media = self.get_media(post)
 
@@ -56,6 +60,16 @@ class Post:
         if iframe:
             return iframe.get('src')
 
+
+class Thread(Post):
+    """
+    Effectively a Post with a title.
+    """
+    def __init__(self, title, post):
+        super(Thread, self).__init__()
+        self.title = title
+
+
 class ForumScraper:
     def __init__(self):
         self.session = requests.Session()
@@ -69,7 +83,24 @@ class ForumScraper:
         else:
             return 1
     
-    def scrape_posts_from_thread(self, url: str):
+    def scrape_post_by_id(self, post_id: int=0, thread_id: str=None):
+        if post_id:
+            url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
+        else:
+            url = f'https://teslamotorsclub.com/tmc/{thread_id}'
+
+        response = self.session.get(url)
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        if post_id:
+            unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
+        else:
+            unparsed_post = soup.find('ol', class_='messageList').find('li')
+
+        return Post(unparsed_post)
+    
+    def scrape_posts_from_thread(self, url: str=None):
         posts = []
 
         response = self.session.get(url)
@@ -90,3 +121,71 @@ class ForumScraper:
                 posts.append(p)
         
         return posts
+
+    def search_threads_and_posts(self, keywords: list, posted_by: list, newer_than:str,
+                                 minimum_replies:int, thread_prefixes:list, search_in_forums:list,
+                                 search_child_forums: bool, most_recent:bool=False,
+                                 most_replies:bool=False):
+            """
+            Behaves the same as the Search Threads and Posts function of TMC:
+            https://teslamotorsclub.com/tmc/search/?type=post
+            Returns search results, which can be Thread and Post objects.
+            """
+
+            form_data = {'keywords': ','.join(keywords),
+                         'users': ','.join(posted_by),
+                         'date': newer_than,
+                         'reply_count': minimum_replies,
+                         'nodes[]': '',
+                         'child_nodes': 1,
+                         'type': 'post',
+                         '_xfToken': '',
+                         '_xfRequestUri': '/tmc/search/?type=post',
+                         '_xfNoRedirect': 1,
+                         '_xfResponseType': 'json'
+                         }
+            
+            if most_recent:
+                form_data.update({'order': 'date'})
+            else:
+                form_data.update({'order': 'replies'})
+            
+            response = self.session.post('https://teslamotorsclub.com/tmc/search/search',
+            data=form_data, headers={'x-requested-with': 'XmlHttpRequest'})
+
+            redirect_target = response.json().get('_redirectTarget')
+
+            if not redirect_target:
+                raise ValueError('A redirect target is not incl' + 
+                                 f'uded in the response: {response.json()}'
+                )
+            
+            soup = BeautifulSoup(self.session.get(redirect_target).content, 'html.parser')
+
+            try:
+                pages = soup.find('a', class_='PageNavNext').find_next('a').text
+            except:
+                pages = 2
+
+            search_results = []
+
+            for page in range(1, int(pages)):
+                if page != 1:
+                    url = redirect_target + f'&page={page}'
+                    response = self.session.get(url)
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                                
+                search_results_list = soup.find('ol', class_='searchResultsList').find_all('li')
+                for search_result in search_results_list:
+                    if 'thread' in search_result.get('class'):
+                        title = search_result.find('h3', class_='title').text
+                        thread_id = search_result.find('h3', class_='title').find('a').get('href')
+                        thread = Thread(title, self.scrape_post_by_id(thread_id=thread_id))
+                        search_results.append(thread)
+                    else:
+                        post_id = search_result.find('h3', class_='title').find('a').get('href')
+                        post_id = post_id[6:-1]
+                        post = self.scrape_post_by_id(post_id=post_id)
+                        search_results.append(post)
+            
+            return search_results
