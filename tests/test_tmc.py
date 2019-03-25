@@ -45,7 +45,10 @@ def test_scrape_specific_post_from_thread():
 
 def test_search_threads_and_posts():
     forum_scraper = ForumScraper()
-    forum_scraper.search_threads_and_posts(keywords=['tires'], posted_by=[], newer_than=None,
-                                           minimum_replies=None, thread_prefixes=[],
-                                           search_in_forums=[], search_child_forums=False,
-                                           most_recent=True, most_replies=False)
+    search_results = forum_scraper.search_threads_and_posts(
+        keywords=['tires', 'spike'], posted_by=[], newer_than=None,
+        minimum_replies=None, thread_prefixes=[],
+        search_in_forums=[], search_child_forums=False,
+        most_recent=True, most_replies=False)
+    
+    assert len(search_results) > 40
