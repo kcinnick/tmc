@@ -46,6 +46,8 @@ class Post:
         self.loves = output_dict.get('Love', 0)
         self.helpful = output_dict.get('Helpful', 0)
 
+        self.sentiment = None
+
     def parse_output_list(self, output_list: list):
         """
         Helper function for cleanly accessing like/love/helpful counts.
@@ -73,6 +75,15 @@ class Post:
         iframe = post.find('iframe')
         if iframe:
             return iframe.get('src')
+    
+    def get_sentiment(self, session=requests.Session()):
+        """
+        Gets sentiment data of post.
+        """
+
+        r = session.post('http://text-processing.com/api/sentiment/',
+                         data={'text': self.message})
+        self.sentiment = r.json()
 
 
 class Thread(Post):

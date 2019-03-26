@@ -52,3 +52,11 @@ def test_search_threads_and_posts():
         most_recent=True, most_replies=False)
     
     assert len(search_results) > 40
+
+def test_message_get_sentiment():
+    forum_scraper = ForumScraper()
+    
+    post = forum_scraper.scrape_post_by_id(post_id=3507092)
+    post.get_sentiment()
+    assert post.sentiment['probability']['neg'] == 0.7414654133095223
+    assert post.sentiment['label'] == 'neg'
