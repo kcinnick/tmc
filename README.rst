@@ -30,7 +30,12 @@ Tesla Motor Club forum scraper.
 Features
 --------
 
-* TODO
+* Scrape user info
+* Scrape posts by user, thread, or post ID
+* Retrieve sentiment for posts
+* Search threads & posts
+
+
 
 Credits
 -------
