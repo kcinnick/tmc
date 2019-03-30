@@ -58,5 +58,4 @@ def test_message_get_sentiment():
     
     post = forum_scraper.scrape_post_by_id(post_id=3507092)
     post.get_sentiment()
-    assert post.sentiment['probability']['neg'] == 0.7414654133095223
     assert post.sentiment['label'] == 'neg'
