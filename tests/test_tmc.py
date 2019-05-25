@@ -65,3 +65,10 @@ def test_message_get_sentiment():
     post = forum_scraper.scrape_post_by_id(post_id=3507092)
     post.get_sentiment()
     assert post.sentiment['label'] == 'neg'
+
+
+def test_scrape_recent_posts():
+    forum_scraper = ForumScraper()
+    recent_posts = forum_scraper.scrape_recent_posts(pages=2)
+    assert len(recent_posts) == 50
+
