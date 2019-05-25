@@ -14,7 +14,6 @@ class User:
     def get_info(self, post: Tag = None, url: str = None):
         """
         Retrieves basic user information.
-        TODO: Add method for Post/message parsing
         TODO: Add logic for parsing from URL.
         """
 
@@ -35,9 +34,10 @@ class Post:
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
         try:
             self.posted_at = post.find('span', class_='DateTime').text
-        except AttributeError:
+        except AttributeError:  # sometimes posted_at is hidden behind an abbr tag
             self.posted_at = post.find('abbr', class_='DateTime').text
-        self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace('Click to expand...', '\n"').strip()
+        self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace(
+            'Click to expand...', '\n"').strip()
         self.media = self.get_media(post)
 
         output_list = post.find('ul', class_='dark_postrating_outputlist')
