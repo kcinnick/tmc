@@ -25,6 +25,7 @@ Open questions:
 
 - how to handle deleted/edited posts?
 - database layer to use? leaning towards MySQL
+- How do we handle poll parsing? Do we even want to handle poll parsing?
 
 Credits
 -------
