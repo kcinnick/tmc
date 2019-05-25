@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup, Tag
+import datetime
 import requests
 import re
 
@@ -29,13 +30,15 @@ class User:
 
 
 class Post:
-    def __init__(self, post: Tag):
+    def __init__(self, post: Tag, thread_title: str):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
+        self.thread_title = thread_title.split('\n')[0]
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
         try:
             self.posted_at = post.find('span', class_='DateTime').text
         except AttributeError:  # sometimes posted_at is hidden behind an abbr tag
             self.posted_at = post.find('abbr', class_='DateTime').text
+        self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
         self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace(
             'Click to expand...', '\n"').strip()
         self.media = self.get_media(post)
@@ -47,7 +50,7 @@ class Post:
         self.loves = output_dict.get('Love', 0)
         self.helpful = output_dict.get('Helpful', 0)
 
-        self.sentiment = None
+        self.sentiment = 0
 
     def parse_output_list(self, output_list: list):
         """
@@ -87,13 +90,15 @@ class Post:
         self.sentiment = r.json()
 
     def upload_to_db(self, db_connection):
-        sql_statement = "INSERT INTO `posts` (`id`, `username`, `posted_at`, `message`, `likes`, `loves`, "
-        sql_statement += f"`helpful`, `sentiment`) VALUES ('{self.id}', '{self.username}', '{self.posted_at}',"
-        sql_statement += f" '{self.message}', {self.likes}, {self.loves}, {self.helpful}, {self.sentiment}"
+        message = self.message.replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
+        sql_statement = "INSERT INTO `posts` (`id`, `thread_title`, `username`, `posted_at`, `message`, `likes`, "
+        sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}',"
+        sql_statement += f"'{self.username}', '{self.posted_at}', '{message}',"
+        sql_statement += f"{self.likes}, {self.loves}, {self.helpful}, {self.sentiment})"
+        print(sql_statement)
         with db_connection.cursor() as cursor:
             cursor.execute(sql_statement)
             db_connection.commit()
-
         return
 
 
@@ -136,8 +141,8 @@ class ForumScraper:
         for page_number in range(1, pages):
             recent_posts_url = url + f'?page={page_number}'
             response = self.session.get(recent_posts_url)
-
             soup = BeautifulSoup(response.content, 'html.parser')
+            thread_title = soup.find('div', class_='titleBar').text.strip()
             discussion_list_items = soup.find('ol', class_='discussionListItems')
             for post in discussion_list_items.find_all('dl', class_='lastPostInfo'):
                 post_id = post.find('a').get('href')[6:-1]
@@ -145,7 +150,7 @@ class ForumScraper:
                 post_response = self.session.get(post_url)
                 post_soup = BeautifulSoup(post_response.content, 'html.parser')
                 targeted_post = post_soup.find('li', attrs={'id': f'fc-post-{post_id}'})
-                parsed_post = Post(targeted_post)
+                parsed_post = Post(targeted_post, thread_title)
                 recent_posts.append(parsed_post)
 
         return recent_posts
@@ -162,9 +167,10 @@ class ForumScraper:
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
+        thread_title = soup.find('div', class_='titleBar').text.strip()
         unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
 
-        return Post(unparsed_post)
+        return Post(unparsed_post, thread_title)
     
     def scrape_posts_from_thread(self, url: str = None):
         """
