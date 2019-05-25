@@ -86,6 +86,16 @@ class Post:
                          data={'text': self.message})
         self.sentiment = r.json()
 
+    def upload_to_db(self, db_connection):
+        sql_statement = "INSERT INTO `posts` (`id`, `username`, `posted_at`, `message`, `likes`, `loves`, "
+        sql_statement += f"`helpful`, `sentiment`) VALUES ('{self.id}', '{self.username}', '{self.posted_at}',"
+        sql_statement += f" '{self.message}', {self.likes}, {self.loves}, {self.helpful}, {self.sentiment}"
+        with db_connection.cursor() as cursor:
+            cursor.execute(sql_statement)
+            db_connection.commit()
+
+        return
+
 
 class Thread(Post):
     """
