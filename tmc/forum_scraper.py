@@ -32,7 +32,7 @@ class User:
 class Post:
     def __init__(self, post: Tag, thread_title: str):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
-        self.thread_title = thread_title.split('\n')
+        self.thread_title = thread_title.replace("'", "\'").replace('"', '\"')
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
         try:
             self.posted_at = post.find('span', class_='DateTime').text
@@ -92,9 +92,10 @@ class Post:
     def upload_to_db(self, db_connection):
         message = self.message.replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
         sql_statement = "INSERT INTO `posts` (`id`, `thread_title`, `username`, `posted_at`, `message`, `likes`, "
-        sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}',"
+        sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}', "
         sql_statement += f"'{self.username}', '{self.posted_at}', '{message}',"
         sql_statement += f"{self.likes}, {self.loves}, {self.helpful}, {self.sentiment})"
+        print(sql_statement)
         with db_connection.cursor() as cursor:
             cursor.execute(sql_statement)
             db_connection.commit()
@@ -127,7 +128,7 @@ class ForumScraper:
         else:
             return 1
 
-    def scrape_recent_posts(self, pages: int = 10):
+    def scrape_recent_posts(self, pages: int = 10, db_connection=None):
         """
         Scrapes most recent posts as shown by https://teslamotorsclub.com/tmc/recent-posts/
         and returns post objects for each new post.
@@ -148,8 +149,11 @@ class ForumScraper:
                 post_response = self.session.get(post_url)
                 post_soup = BeautifulSoup(post_response.content, 'html.parser')
                 targeted_post = post_soup.find('li', attrs={'id': f'fc-post-{post_id}'})
-                thread_title = post_soup.find('div', class_='titleBar').text.strip().splitlines()[0]
+                thread_title = post_soup.find('div', class_='titleBar').text.strip().split('\n')[0]
                 parsed_post = Post(targeted_post, thread_title)
+                if db_connection:
+                    parsed_post.upload_to_db(db_connection)
+                    print('Post uploaded, moving on.\n')
                 recent_posts.append(parsed_post)
 
         return recent_posts
