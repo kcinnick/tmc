@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup, Tag
 import requests
 import re
 
+
 class User:
     def __init__(self):
         self.username = None
@@ -10,7 +11,7 @@ class User:
         self.messages = None
         self.location = None
 
-    def get_info(self, post:Tag=None, url:str=None):
+    def get_info(self, post: Tag = None, url: str = None):
         """
         Retrieves basic user information.
         TODO: Add method for Post/message parsing
@@ -112,7 +113,7 @@ class ForumScraper:
         else:
             return 1
     
-    def scrape_post_by_id(self, post_id: int=0, thread_id: str=None):
+    def scrape_post_by_id(self, post_id: int = 0, thread_id: str = None):
         """
         Given a post or thread's ID, retrieves the post's URL
         and returns a Post object.
@@ -134,7 +135,7 @@ class ForumScraper:
 
         return Post(unparsed_post)
     
-    def scrape_posts_from_thread(self, url: str=None):
+    def scrape_posts_from_thread(self, url: str = None):
         """
         Parses posts in thread as Post objects and
         returns them in a list.
@@ -161,10 +162,10 @@ class ForumScraper:
         
         return posts
 
-    def search_threads_and_posts(self, keywords: list, posted_by: list, newer_than:str,
-                                 minimum_replies:int, thread_prefixes:list, search_in_forums:list,
-                                 search_child_forums: bool, most_recent:bool=False,
-                                 most_replies:bool=False):
+    def search_threads_and_posts(self, keywords: list, posted_by: list, newer_than: str,
+                                 minimum_replies: int, thread_prefixes: list,
+                                 search_in_forums: list, search_child_forums: bool,
+                                 most_recent: bool = False, most_replies: bool = False):
             """
             Behaves the same as the Search Threads and Posts function of TMC:
             https://teslamotorsclub.com/tmc/search/?type=post
@@ -190,7 +191,7 @@ class ForumScraper:
                 form_data.update({'order': 'replies'})
             
             response = self.session.post('https://teslamotorsclub.com/tmc/search/search',
-            data=form_data, headers={'x-requested-with': 'XmlHttpRequest'})
+                                         data=form_data, headers={'x-requested-with': 'XmlHttpRequest'})
 
             redirect_target = response.json().get('_redirectTarget')
 

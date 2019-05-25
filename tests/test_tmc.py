@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from tmc.forum_scraper import User, Post, ForumScraper
 import pytest
 
+
 def test_user_collection():
     with open('tests/fixtures/single_post.html', 'r') as f:
         post = BeautifulSoup(f.read(), 'html.parser')
@@ -16,6 +17,7 @@ def test_user_collection():
     assert user.username == 'Chickenlittle'
     assert user.joined == 'Sep 10, 2013'
     assert user.location == 'Virginia'
+
 
 def test_media_post_collect():
     with open('tests/fixtures/single_media_post.html', 'r') as f:
@@ -28,11 +30,13 @@ def test_media_post_collect():
     assert p.likes == 10
     assert p.loves == 1
 
+
 def test_scrape_posts_from_thread():
     forum_scraper = ForumScraper()
 
     posts = forum_scraper.scrape_posts_from_thread(url='https://teslamotorsclub.com/tmc/threads/i-thought-i-would-mention-that-i-think-tesla-has-one-of-the-nicest-websites.14/')
     assert len(posts) == 4
+
 
 def test_scrape_specific_post_from_thread():
     forum_scraper = ForumScraper()
@@ -43,6 +47,7 @@ def test_scrape_specific_post_from_thread():
     assert post.username == 'InParadise'
     assert 'Do you have a referral' in post.message
 
+
 def test_search_threads_and_posts():
     forum_scraper = ForumScraper()
     search_results = forum_scraper.search_threads_and_posts(
@@ -52,6 +57,7 @@ def test_search_threads_and_posts():
         most_recent=True, most_replies=False)
     
     assert len(search_results) > 40
+
 
 def test_message_get_sentiment():
     forum_scraper = ForumScraper()
