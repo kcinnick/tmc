@@ -32,7 +32,7 @@ class User:
 class Post:
     def __init__(self, post: Tag, thread_title: str):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
-        self.thread_title = thread_title.split('\n')[0]
+        self.thread_title = thread_title.split('\n')
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
         try:
             self.posted_at = post.find('span', class_='DateTime').text
@@ -141,7 +141,6 @@ class ForumScraper:
             recent_posts_url = url + f'?page={page_number}'
             response = self.session.get(recent_posts_url)
             soup = BeautifulSoup(response.content, 'html.parser')
-            thread_title = soup.find('div', class_='titleBar').text.strip()
             discussion_list_items = soup.find('ol', class_='discussionListItems')
             for post in discussion_list_items.find_all('dl', class_='lastPostInfo'):
                 post_id = post.find('a').get('href')[6:-1]
@@ -149,6 +148,7 @@ class ForumScraper:
                 post_response = self.session.get(post_url)
                 post_soup = BeautifulSoup(post_response.content, 'html.parser')
                 targeted_post = post_soup.find('li', attrs={'id': f'fc-post-{post_id}'})
+                thread_title = post_soup.find('div', class_='titleBar').text.strip().splitlines()[0]
                 parsed_post = Post(targeted_post, thread_title)
                 recent_posts.append(parsed_post)
 
@@ -193,7 +193,7 @@ class ForumScraper:
             
             unparsed_posts = soup.find_all('li', attrs={'id': re.compile('fc-post-\d+')})
             for post in unparsed_posts:
-                p = Post(post)
+                p = Post(post)  # TODO: FIX THIS!!! Need to add thread title
                 posts.append(p)
         
         return posts
