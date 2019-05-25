@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup, Tag
+import datetime
 import requests
 import re
 
@@ -14,7 +15,6 @@ class User:
     def get_info(self, post: Tag = None, url: str = None):
         """
         Retrieves basic user information.
-        TODO: Add method for Post/message parsing
         TODO: Add logic for parsing from URL.
         """
 
@@ -30,14 +30,17 @@ class User:
 
 
 class Post:
-    def __init__(self, post: Tag):
+    def __init__(self, post: Tag, thread_title: str):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
+        self.thread_title = thread_title.split('\n')
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
         try:
             self.posted_at = post.find('span', class_='DateTime').text
-        except AttributeError:
+        except AttributeError:  # sometimes posted_at is hidden behind an abbr tag
             self.posted_at = post.find('abbr', class_='DateTime').text
-        self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace('Click to expand...', '\n"').strip()
+        self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
+        self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace(
+            'Click to expand...', '\n"').strip()
         self.media = self.get_media(post)
 
         output_list = post.find('ul', class_='dark_postrating_outputlist')
@@ -47,7 +50,7 @@ class Post:
         self.loves = output_dict.get('Love', 0)
         self.helpful = output_dict.get('Helpful', 0)
 
-        self.sentiment = None
+        self.sentiment = 0
 
     def parse_output_list(self, output_list: list):
         """
@@ -85,6 +88,17 @@ class Post:
         r = session.post('http://text-processing.com/api/sentiment/',
                          data={'text': self.message})
         self.sentiment = r.json()
+
+    def upload_to_db(self, db_connection):
+        message = self.message.replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
+        sql_statement = "INSERT INTO `posts` (`id`, `thread_title`, `username`, `posted_at`, `message`, `likes`, "
+        sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}',"
+        sql_statement += f"'{self.username}', '{self.posted_at}', '{message}',"
+        sql_statement += f"{self.likes}, {self.loves}, {self.helpful}, {self.sentiment})"
+        with db_connection.cursor() as cursor:
+            cursor.execute(sql_statement)
+            db_connection.commit()
+        return
 
 
 class Thread(Post):
@@ -126,7 +140,6 @@ class ForumScraper:
         for page_number in range(1, pages):
             recent_posts_url = url + f'?page={page_number}'
             response = self.session.get(recent_posts_url)
-
             soup = BeautifulSoup(response.content, 'html.parser')
             discussion_list_items = soup.find('ol', class_='discussionListItems')
             for post in discussion_list_items.find_all('dl', class_='lastPostInfo'):
@@ -135,32 +148,28 @@ class ForumScraper:
                 post_response = self.session.get(post_url)
                 post_soup = BeautifulSoup(post_response.content, 'html.parser')
                 targeted_post = post_soup.find('li', attrs={'id': f'fc-post-{post_id}'})
-                parsed_post = Post(targeted_post)
+                thread_title = post_soup.find('div', class_='titleBar').text.strip().splitlines()[0]
+                parsed_post = Post(targeted_post, thread_title)
                 recent_posts.append(parsed_post)
 
         return recent_posts
 
-    def scrape_post_by_id(self, post_id: int = 0, thread_id: str = None):
+    def scrape_post_by_id(self, post_id: int = 0):
         """
         Given a post or thread's ID, retrieves the post's URL
         and returns a Post object.
         """
         
-        if post_id:
-            url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
-        else:
-            url = f'https://teslamotorsclub.com/tmc/{thread_id}'
+        url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
 
         response = self.session.get(url)
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        if post_id:
-            unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
-        else:
-            unparsed_post = soup.find('ol', class_='messageList').find('li')
+        thread_title = soup.find('div', class_='titleBar').text.strip()
+        unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
 
-        return Post(unparsed_post)
+        return Post(unparsed_post, thread_title)
     
     def scrape_posts_from_thread(self, url: str = None):
         """
@@ -184,7 +193,7 @@ class ForumScraper:
             
             unparsed_posts = soup.find_all('li', attrs={'id': re.compile('fc-post-\d+')})
             for post in unparsed_posts:
-                p = Post(post)
+                p = Post(post)  # TODO: FIX THIS!!! Need to add thread title
                 posts.append(p)
         
         return posts
