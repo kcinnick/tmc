@@ -113,7 +113,7 @@ class ForumScraper:
         else:
             return 1
 
-    def scrape_recent_posts(self):
+    def scrape_recent_posts(self, pages: int = 10):
         """
         Scrapes most recent posts as shown by https://teslamotorsclub.com/tmc/recent-posts/
         and returns post objects for each new post.
@@ -123,7 +123,7 @@ class ForumScraper:
 
         recent_posts = []
 
-        for page_number in range(1, 11):
+        for page_number in range(1, pages):
             recent_posts_url = url + f'?page={page_number}'
             response = self.session.get(recent_posts_url)
 
@@ -138,7 +138,7 @@ class ForumScraper:
                 parsed_post = Post(targeted_post)
                 recent_posts.append(parsed_post)
 
-        return
+        return recent_posts
 
     def scrape_post_by_id(self, post_id: int = 0, thread_id: str = None):
         """
