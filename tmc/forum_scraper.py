@@ -150,25 +150,19 @@ class ForumScraper:
 
         return recent_posts
 
-    def scrape_post_by_id(self, post_id: int = 0, thread_id: str = None):
+    def scrape_post_by_id(self, post_id: int = 0):
         """
         Given a post or thread's ID, retrieves the post's URL
         and returns a Post object.
         """
         
-        if post_id:
-            url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
-        else:
-            url = f'https://teslamotorsclub.com/tmc/{thread_id}'
+        url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
 
         response = self.session.get(url)
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        if post_id:
-            unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
-        else:
-            unparsed_post = soup.find('ol', class_='messageList').find('li')
+        unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
 
         return Post(unparsed_post)
     
