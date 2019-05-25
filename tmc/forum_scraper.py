@@ -95,7 +95,6 @@ class Post:
         sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}',"
         sql_statement += f"'{self.username}', '{self.posted_at}', '{message}',"
         sql_statement += f"{self.likes}, {self.loves}, {self.helpful}, {self.sentiment})"
-        print(sql_statement)
         with db_connection.cursor() as cursor:
             cursor.execute(sql_statement)
             db_connection.commit()
