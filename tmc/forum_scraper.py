@@ -91,7 +91,7 @@ class Thread(Post):
     """
     Effectively a Post with a title.
     """
-    def __init__(self, title:str, post: Tag):
+    def __init__(self, title: str, post: Tag):
         super(Thread, self).__init__()
         self.title = title
 
@@ -112,7 +112,34 @@ class ForumScraper:
             return int(soup.find('span', class_='pageNavHeader').text.split()[-1])
         else:
             return 1
-    
+
+    def scrape_recent_posts(self):
+        """
+        Scrapes most recent posts as shown by https://teslamotorsclub.com/tmc/recent-posts/
+        and returns post objects for each new post.
+        """
+
+        url = 'https://teslamotorsclub.com/tmc/recent-posts/'
+
+        recent_posts = []
+
+        for page_number in range(1, 11):
+            recent_posts_url = url + f'?page={page_number}'
+            response = self.session.get(recent_posts_url)
+
+            soup = BeautifulSoup(response.content, 'html.parser')
+            discussion_list_items = soup.find('ol', class_='discussionListItems')
+            for post in discussion_list_items.find_all('dl', class_='lastPostInfo'):
+                post_id = post.find('a').get('href')[6:-1]
+                post_url = 'https://teslamotorsclub.com/tmc/posts/' + post_id
+                post_response = self.session.get(post_url)
+                post_soup = BeautifulSoup(post_response.content, 'html.parser')
+                targeted_post = post_soup.find('li', attrs={'id': f'fc-post-{post_id}'})
+                parsed_post = Post(targeted_post)
+                recent_posts.append(parsed_post)
+
+        return
+
     def scrape_post_by_id(self, post_id: int = 0, thread_id: str = None):
         """
         Given a post or thread's ID, retrieves the post's URL
