@@ -20,9 +20,10 @@ def test_user_collection():
 
 
 def test_media_post_collect():
+    thread_title = 'test_media_post_collect method'
     with open('tests/fixtures/single_media_post.html', 'r') as f:
         post = BeautifulSoup(f.read(), 'html.parser')
-        p = Post(post)
+        p = Post(post, thread_title)
     
     assert p.id == 3463146
     assert p.username == 'gavine'
