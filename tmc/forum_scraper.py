@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup, Tag
 import datetime
+from pymysql.err import IntegrityError
 import requests
 import re
 
@@ -32,7 +33,7 @@ class User:
 class Post:
     def __init__(self, post: Tag, thread_title: str):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
-        self.thread_title = thread_title.replace("'", "\'").replace('"', '\"')
+        self.thread_title = thread_title.replace("'", "\\'").replace('"', '\\"')
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
         try:
             self.posted_at = post.find('span', class_='DateTime').text
@@ -52,7 +53,8 @@ class Post:
 
         self.sentiment = 0
 
-    def parse_output_list(self, output_list: list):
+    @staticmethod
+    def parse_output_list(output_list: list):
         """
         Helper function for cleanly accessing like/love/helpful counts.
         """
@@ -71,7 +73,8 @@ class Post:
         
         return output_dict
 
-    def get_media(self, post: Tag):
+    @staticmethod
+    def get_media(post: Tag):
         """
         Retrieves media's URL, if any.
         """
@@ -115,8 +118,9 @@ class ForumScraper:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({'User-Agent': 'https://github.com/kcinnick/tmc'})
-    
-    def get_number_of_pages_in_thread(self, soup: BeautifulSoup):
+
+    @staticmethod
+    def get_number_of_pages_in_thread(soup: BeautifulSoup):
         """
         Retrieves the number of pages in a thread.
         """
@@ -137,7 +141,7 @@ class ForumScraper:
         url = 'https://teslamotorsclub.com/tmc/recent-posts/'
 
         recent_posts = []
-
+        integrity_errors = 0
         for page_number in range(1, pages):
             recent_posts_url = url + f'?page={page_number}'
             response = self.session.get(recent_posts_url)
@@ -152,8 +156,15 @@ class ForumScraper:
                 thread_title = post_soup.find('div', class_='titleBar').text.strip().split('\n')[0]
                 parsed_post = Post(targeted_post, thread_title)
                 if db_connection:
-                    parsed_post.upload_to_db(db_connection)
-                    print('Post uploaded, moving on.\n')
+                    try:
+                        parsed_post.upload_to_db(db_connection)
+                        print('Post uploaded, moving on.\n')
+                    except IntegrityError:
+                        integrity_errors += 1
+                        print('Duplicate found - ignoring.\n')
+                        if integrity_errors > 11:
+                            print('Old data reached - stopping search.')
+                            return
                 recent_posts.append(parsed_post)
 
         return recent_posts
