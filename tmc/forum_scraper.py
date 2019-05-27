@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup, Tag
 import datetime
+from pymysql.err import IntegrityError
 import requests
 import re
 
@@ -32,13 +33,17 @@ class User:
 class Post:
     def __init__(self, post: Tag, thread_title: str):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
-        self.thread_title = thread_title.split('\n')
+        self.thread_title = thread_title.replace("'", "\\'").replace('"', '\\"')
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
         try:
             self.posted_at = post.find('span', class_='DateTime').text
         except AttributeError:  # sometimes posted_at is hidden behind an abbr tag
             self.posted_at = post.find('abbr', class_='DateTime').text
-        self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
+        try:
+            self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
+        except ValueError:
+            self.posted_at = post.find('span', class_='DateTime').get('title')
+            self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
         self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace(
             'Click to expand...', '\n"').strip()
         self.media = self.get_media(post)
@@ -52,7 +57,8 @@ class Post:
 
         self.sentiment = 0
 
-    def parse_output_list(self, output_list: list):
+    @staticmethod
+    def parse_output_list(output_list: dict):
         """
         Helper function for cleanly accessing like/love/helpful counts.
         """
@@ -71,7 +77,8 @@ class Post:
         
         return output_dict
 
-    def get_media(self, post: Tag):
+    @staticmethod
+    def get_media(post: Tag):
         """
         Retrieves media's URL, if any.
         """
@@ -79,7 +86,7 @@ class Post:
         iframe = post.find('iframe')
         if iframe:
             return iframe.get('src')
-    
+
     def get_sentiment(self, session=requests.Session()):
         """
         Gets sentiment data of post.
@@ -92,7 +99,7 @@ class Post:
     def upload_to_db(self, db_connection):
         message = self.message.replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
         sql_statement = "INSERT INTO `posts` (`id`, `thread_title`, `username`, `posted_at`, `message`, `likes`, "
-        sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}',"
+        sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}', "
         sql_statement += f"'{self.username}', '{self.posted_at}', '{message}',"
         sql_statement += f"{self.likes}, {self.loves}, {self.helpful}, {self.sentiment})"
         with db_connection.cursor() as cursor:
@@ -114,8 +121,9 @@ class ForumScraper:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({'User-Agent': 'https://github.com/kcinnick/tmc'})
-    
-    def get_number_of_pages_in_thread(self, soup: BeautifulSoup):
+
+    @staticmethod
+    def get_number_of_pages_in_thread(soup: BeautifulSoup):
         """
         Retrieves the number of pages in a thread.
         """
@@ -127,7 +135,7 @@ class ForumScraper:
         else:
             return 1
 
-    def scrape_recent_posts(self, pages: int = 10):
+    def scrape_recent_posts(self, pages: int = 10, db_connection=None):
         """
         Scrapes most recent posts as shown by https://teslamotorsclub.com/tmc/recent-posts/
         and returns post objects for each new post.
@@ -136,7 +144,7 @@ class ForumScraper:
         url = 'https://teslamotorsclub.com/tmc/recent-posts/'
 
         recent_posts = []
-
+        integrity_errors = 0
         for page_number in range(1, pages):
             recent_posts_url = url + f'?page={page_number}'
             response = self.session.get(recent_posts_url)
@@ -148,8 +156,18 @@ class ForumScraper:
                 post_response = self.session.get(post_url)
                 post_soup = BeautifulSoup(post_response.content, 'html.parser')
                 targeted_post = post_soup.find('li', attrs={'id': f'fc-post-{post_id}'})
-                thread_title = post_soup.find('div', class_='titleBar').text.strip().splitlines()[0]
+                thread_title = post_soup.find('div', class_='titleBar').text.strip().split('\n')[0]
                 parsed_post = Post(targeted_post, thread_title)
+                if db_connection:
+                    try:
+                        parsed_post.upload_to_db(db_connection)
+                        print('Post uploaded, moving on.\n')
+                    except IntegrityError:
+                        integrity_errors += 1
+                        print('Duplicate found - ignoring.\n')
+                        if integrity_errors > 11:
+                            print('Old data reached - stopping search.')
+                            return
                 recent_posts.append(parsed_post)
 
         return recent_posts
@@ -192,8 +210,10 @@ class ForumScraper:
                 soup = BeautifulSoup(response.content, 'html.parser')
             
             unparsed_posts = soup.find_all('li', attrs={'id': re.compile('fc-post-\d+')})
+            thread_title = soup.find('div', class_='titleBar').text.strip().split('\n')[0]
+
             for post in unparsed_posts:
-                p = Post(post)  # TODO: FIX THIS!!! Need to add thread title
+                p = Post(post, thread_title)
                 posts.append(p)
         
         return posts
