@@ -87,6 +87,15 @@ class Post:
         if iframe:
             return iframe.get('src')
 
+    def get_sentiment(self, session=requests.Session()):
+        """
+        Gets sentiment data of post.
+        """
+
+        r = session.post('http://text-processing.com/api/sentiment/',
+                         data={'text': self.message})
+        self.sentiment = r.json()
+
     def upload_to_db(self, db_connection):
         message = self.message.replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
         sql_statement = "INSERT INTO `posts` (`id`, `thread_title`, `username`, `posted_at`, `message`, `likes`, "
