@@ -39,7 +39,11 @@ class Post:
             self.posted_at = post.find('span', class_='DateTime').text
         except AttributeError:  # sometimes posted_at is hidden behind an abbr tag
             self.posted_at = post.find('abbr', class_='DateTime').text
-        self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
+        try:
+            self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
+        except ValueError:
+            self.posted_at = post.find('span', class_='DateTime').get('title')
+            self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
         self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace(
             'Click to expand...', '\n"').strip()
         self.media = self.get_media(post)
@@ -54,7 +58,7 @@ class Post:
         self.sentiment = 0
 
     @staticmethod
-    def parse_output_list(output_list: list):
+    def parse_output_list(output_list: dict):
         """
         Helper function for cleanly accessing like/love/helpful counts.
         """
@@ -82,15 +86,6 @@ class Post:
         iframe = post.find('iframe')
         if iframe:
             return iframe.get('src')
-    
-    def get_sentiment(self, session=requests.Session()):
-        """
-        Gets sentiment data of post.
-        """
-
-        r = session.post('http://text-processing.com/api/sentiment/',
-                         data={'text': self.message})
-        self.sentiment = r.json()
 
     def upload_to_db(self, db_connection):
         message = self.message.replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
@@ -206,8 +201,10 @@ class ForumScraper:
                 soup = BeautifulSoup(response.content, 'html.parser')
             
             unparsed_posts = soup.find_all('li', attrs={'id': re.compile('fc-post-\d+')})
+            thread_title = soup.find('div', class_='titleBar').text.strip().split('\n')[0]
+
             for post in unparsed_posts:
-                p = Post(post)  # TODO: FIX THIS!!! Need to add thread title
+                p = Post(post, thread_title)
                 posts.append(p)
         
         return posts
