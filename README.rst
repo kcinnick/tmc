@@ -18,6 +18,8 @@ Features
 * Scrape posts by user, thread, or post ID
 * Retrieve sentiment for posts
 * Search threads & posts
+* Scrape recent posts
+* Upload scraped posts to a database
 
 My current thinking is that if I just repeatedly scrape the recent posts page (https://teslamotorsclub.com/tmc/recent-posts/), that will provide the sufficient data to inform every other view (i.e. search by thread/poster/sentiment/keyword/etc.) in a database format.
 
