@@ -34,6 +34,8 @@ TODO
 
 - Need to add method to ID posts that got skipped in the scraping process for whatever reason - current thinking is to do a left outer join against all currently possible post ID values and collect from there, while noting those values for future reference.
 
+- Write a method for outputting last weeks/arbitrary date range's data to CSV format for data dumps.
+
 Credits
 -------
 
