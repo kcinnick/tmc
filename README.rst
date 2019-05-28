@@ -36,6 +36,8 @@ TODO
 
 - Write a method for outputting last weeks/arbitrary date range's data to CSV format for data dumps.
 
+- In consideration of things like sentiment analysis and overall data quality, need to come up with a way to handle posts that contain quotes of other posts. Quotes are easy to ID, so the only thing to decide is how exactly to handle this - maybe a "in reply to" column in the database?
+
 Credits
 -------
 
