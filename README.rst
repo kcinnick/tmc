@@ -32,6 +32,8 @@ TODO
 ----
 - My thoughts on handling deleted posts currently are twofold: step one, setting up a database that records *only* a post's ID and if it had been deleted at last check.  This would not require changing the existing database, which I prefer as a solution because that database is constantly being written to.  Might need to be expanded in the future if I decide to tackle edited posts, which carry their own questions (do they show up in recent posts, etc.)
 
+- Need to add method to ID posts that got skipped in the scraping process for whatever reason - current thinking is to do a left outer join against all currently possible post ID values and collect from there, while noting those values for future reference.
+
 Credits
 -------
 
