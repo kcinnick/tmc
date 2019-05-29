@@ -9,7 +9,7 @@ Tesla Motor Club forum scraper.
 * Free software: MIT license
 * Documentation: https://tmc.readthedocs.io.
 
-With the increased activity on the forums related to recent $TSLA occurrences (repairs being backed up, funding concerns at the company, etc.) I'm resuming active development on this module. :-)
+With the increased activity on the forums related to recent $TSLA occurrences (repairs being backed up, funding concerns at the company, etc.) I'm resuming active development on this module. This is a work in progress and I'd greatly appreciate any suggestions or thoughts on it!
 
 Features
 --------
