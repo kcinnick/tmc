@@ -40,6 +40,8 @@ TODO
 
 - Write a method to plot # of comments for a time range, then narrow that to sentiment posts w/i time range, etc.
 
+- Start uploading database dump when historical load is completed.
+
 Credits
 -------
 
