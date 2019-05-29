@@ -42,6 +42,8 @@ TODO
 
 - Start uploading database dump when historical load is completed.
 
+- Write tests that asserts random post has all the attrs we look for - to avoid any troubles coming up from using the fixture files.
+
 Credits
 -------
 
