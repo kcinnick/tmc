@@ -250,6 +250,10 @@ class ForumScraper:
                      '_xfResponseType': 'json'
                      }
 
+        r = self.session.get('https://teslamotorsclub.com/tmc/search/?type=post')
+        soup = BeautifulSoup(r.content, 'html.parser')
+        form_data['_xfToken'] = soup.find('input', attrs={'name': '_xfToken'}).get('value')
+
         if most_recent:
             form_data.update({'order': 'date'})
         else:
