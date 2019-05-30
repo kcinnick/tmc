@@ -27,6 +27,7 @@ Open questions:
 
 - how to handle deleted/edited posts?
 - How do we handle poll parsing? Do we even want to handle poll parsing?
+- The new `TMCDatabase` class will be pretty difficult for others to test if all of the methods require a database connection and the database that I've built from this. However, if the methods only return the requisite SQL string, the only thing I'd really be testing is Python's string parsing & building capacity.  I'm leaning towards just writing tests that are skipped by default right now.
 
 TODO
 ----
@@ -42,7 +43,7 @@ TODO
 
 - Start uploading database dump when historical load is completed.
 
-- Write tests that asserts random post has all the attrs we look for - to avoid any troubles coming up from using the fixture files.
+- Write test for `TMCDatabase` and remember to set them to skip by default.
 
 Credits
 -------
