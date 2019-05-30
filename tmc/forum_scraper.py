@@ -316,3 +316,4 @@ class TMCDatabase:
         with self.connection.cursor(pymysql.cursors.DictCursor) as cursor:
             results = cursor.fetchall()
             return results
+
