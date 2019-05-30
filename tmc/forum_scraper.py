@@ -294,3 +294,21 @@ class ForumScraper:
                     search_results.append(post)
 
         return search_results
+
+
+class TMCDatabase:
+    def __init__(self, connection):
+        self.connection = connection
+
+    def retrieve_from_posts_database(self, from_post_id=None, to_post_id=None, limit=None, attrs='*'):
+        import pymysql
+        sql_statement = f"SELECT {attrs} FROM posts WHERE "
+        if from_post_id:
+            sql_statement += f"POST ID > f{from_post_id} "
+            if to_post_id:
+                sql_statement += f"< {to_post_id}"
+        if limit:
+            sql_statement += f" LIMIT {limit}"
+        with self.connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            results = cursor.fetchall()
+            return results
