@@ -308,12 +308,13 @@ class TMCDatabase:
         import pymysql
         sql_statement = f"SELECT {attrs} FROM posts WHERE "
         if from_post_id:
-            sql_statement += f"POST ID > f{from_post_id} "
+            sql_statement += f"`id` > {from_post_id} "
             if to_post_id:
                 sql_statement += f"< {to_post_id}"
         if limit:
             sql_statement += f" LIMIT {limit}"
         with self.connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute(sql_statement)
             results = cursor.fetchall()
             return results
 
