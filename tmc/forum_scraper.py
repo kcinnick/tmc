@@ -331,7 +331,7 @@ class TMCDatabase:
         with open(kwargs['file_name'], 'w') as csvfile:
             field_names = ['id', 'thread_title', 'username', 'posted_at', 'message', 'media', 'likes', 'loves',
                            'helpful']
-            writer = DictWriter()
+            writer = DictWriter(csvfile, fieldnames=field_names)
             writer.writeheader()
-            writer.writerows()
+            writer.writerows(posts)
 
