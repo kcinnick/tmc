@@ -4,7 +4,7 @@
 """Tests for `tmc` package."""
 
 from bs4 import BeautifulSoup
-from tmc.forum_scraper import User, Post, ForumScraper
+from tmc.forum_scraper import User, Post, ForumScraper, TMCDatabase
 import pytest
 
 
@@ -73,3 +73,18 @@ def test_scrape_recent_posts():
     recent_posts = forum_scraper.scrape_recent_posts(pages=2)
     assert len(recent_posts) == 50
 
+
+@pytest.mark.skip(reason="Skipped by default b/c it will fail if DB isn't present and credentials aren't present.")
+def test_retrieve_posts_from_database():
+    with open('tmc/credentials.txt', 'r') as f:
+        password = f.read().strip()
+
+    import pymysql
+    connection = pymysql.connect(
+        user='root', password=password,
+        host='127.0.0.1',
+        database='tmc',
+    )
+    tmc_database = TMCDatabase(connection)
+    posts = tmc_database.retrieve_from_posts_database(from_post_id=1, to_post_id=10, attrs='*', limit=8)
+    assert len(posts) == 8
