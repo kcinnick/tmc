@@ -306,12 +306,17 @@ class TMCDatabase:
         self.connection = connection
 
     def retrieve_from_posts_database(self, **kwargs):
+        keys = kwargs.keys()
         sql_statement = f"SELECT {kwargs['attrs']} FROM posts WHERE "
-        if 'from_post_id' in kwargs.keys():
+        if 'from_post_id' in keys:
             sql_statement += f"`id` > {kwargs['from_post_id']} "
-            if 'to_post_id' in kwargs.keys():
+            if 'to_post_id' in keys:
                 sql_statement += f"AND `id` < {kwargs['to_post_id']}"
-        if 'limit' in kwargs.keys():
+        if 'posted_from_start' in keys:
+            sql_statement += f"`posted_at` > {kwargs['posted_from_start']}"
+            if 'posted_from_end' in keys:
+                sql_statement += f" AND `posted_at` < {kwargs['posted_from_end']}"
+        if 'limit' in keys:
             sql_statement += f" LIMIT {kwargs['limit']}"
         with self.connection.cursor(DictCursor) as cursor:
             cursor.execute(sql_statement)
