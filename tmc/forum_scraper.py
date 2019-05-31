@@ -313,10 +313,10 @@ class TMCDatabase:
             sql_statement += f"`id` > {kwargs['from_post_id']} "
             if 'to_post_id' in keys:
                 sql_statement += f"AND `id` < {kwargs['to_post_id']}"
-        if 'posted_from_start' in keys:
-            sql_statement += f"`posted_at` > {kwargs['posted_from_start']}"
-            if 'posted_from_end' in keys:
-                sql_statement += f" AND `posted_at` < {kwargs['posted_from_end']}"
+        if 'posted_at_start' in keys:
+            sql_statement += f"`posted_at` > {kwargs['posted_at_start']}"
+            if 'posted_at_end' in keys:
+                sql_statement += f" AND `posted_at` < {kwargs['posted_at_end']}"
         if 'limit' in keys:
             sql_statement += f" LIMIT {kwargs['limit']}"
         with self.connection.cursor(DictCursor) as cursor:
@@ -334,4 +334,3 @@ class TMCDatabase:
             writer = DictWriter(csvfile, fieldnames=field_names)
             writer.writeheader()
             writer.writerows(posts)
-
