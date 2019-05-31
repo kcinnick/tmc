@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup, Tag
+from csv import DictWriter
 import datetime
 from pymysql.err import IntegrityError
 from pymysql.cursors import DictCursor
@@ -305,17 +306,33 @@ class TMCDatabase:
     def __init__(self, connection):
         self.connection = connection
 
-    def retrieve_from_posts_database(self, **kwargs):
+    def retrieve_from_posts_database(self, attrs='*', **kwargs):
+        keys = kwargs.keys()
+        if 'attrs' not in keys:
+            kwargs['attrs'] = attrs
         sql_statement = f"SELECT {kwargs['attrs']} FROM posts WHERE "
-        if 'from_post_id' in kwargs.keys():
+        if 'from_post_id' in keys:
             sql_statement += f"`id` > {kwargs['from_post_id']} "
-            if 'to_post_id' in kwargs.keys():
+            if 'to_post_id' in keys:
                 sql_statement += f"AND `id` < {kwargs['to_post_id']}"
-        if 'limit' in kwargs.keys():
+        if 'posted_at_start' in keys:
+            sql_statement += f"`posted_at` > {kwargs['posted_at_start']}"
+            if 'posted_at_end' in keys:
+                sql_statement += f" AND `posted_at` < {kwargs['posted_at_end']}"
+        if 'limit' in keys:
             sql_statement += f" LIMIT {kwargs['limit']}"
         with self.connection.cursor(DictCursor) as cursor:
             cursor.execute(sql_statement)
             results = cursor.fetchall()
             return results
 
-
+    def export_to_csv(self, **kwargs):
+        keys = kwargs.keys()
+        posts = self.retrieve_from_posts_database(**kwargs)
+        assert 'file_name' in keys
+        with open(kwargs['file_name'], 'w', newline='\n') as csvfile:
+            field_names = ['id', 'thread_title', 'username', 'posted_at', 'message', 'media', 'likes', 'loves',
+                           'helpful', 'sentiment']
+            writer = DictWriter(csvfile, fieldnames=field_names)
+            writer.writeheader()
+            writer.writerows(posts)
