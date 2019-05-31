@@ -306,8 +306,10 @@ class TMCDatabase:
     def __init__(self, connection):
         self.connection = connection
 
-    def retrieve_from_posts_database(self, **kwargs):
+    def retrieve_from_posts_database(self, attrs='*', **kwargs):
         keys = kwargs.keys()
+        if 'attrs' not in keys:
+            kwargs['attrs'] = attrs
         sql_statement = f"SELECT {kwargs['attrs']} FROM posts WHERE "
         if 'from_post_id' in keys:
             sql_statement += f"`id` > {kwargs['from_post_id']} "
@@ -328,9 +330,9 @@ class TMCDatabase:
         keys = kwargs.keys()
         posts = self.retrieve_from_posts_database(**kwargs)
         assert 'file_name' in keys
-        with open(kwargs['file_name'], 'w') as csvfile:
+        with open(kwargs['file_name'], 'w', newline='\n') as csvfile:
             field_names = ['id', 'thread_title', 'username', 'posted_at', 'message', 'media', 'likes', 'loves',
-                           'helpful']
+                           'helpful', 'sentiment']
             writer = DictWriter(csvfile, fieldnames=field_names)
             writer.writeheader()
             writer.writerows(posts)
