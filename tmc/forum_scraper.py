@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup, Tag
 import datetime
 from pymysql.err import IntegrityError
+from pymysql.cursors import DictCursor
 import requests
 import re
 
@@ -298,3 +299,23 @@ class ForumScraper:
                     search_results.append(post)
 
         return search_results
+
+
+class TMCDatabase:
+    def __init__(self, connection):
+        self.connection = connection
+
+    def retrieve_from_posts_database(self, **kwargs):
+        sql_statement = f"SELECT {kwargs['attrs']} FROM posts WHERE "
+        if 'from_post_id' in kwargs.keys():
+            sql_statement += f"`id` > {kwargs['from_post_id']} "
+            if 'to_post_id' in kwargs.keys():
+                sql_statement += f"AND `id` < {kwargs['to_post_id']}"
+        if 'limit' in kwargs.keys():
+            sql_statement += f" LIMIT {kwargs['limit']}"
+        with self.connection.cursor(DictCursor) as cursor:
+            cursor.execute(sql_statement)
+            results = cursor.fetchall()
+            return results
+
+
