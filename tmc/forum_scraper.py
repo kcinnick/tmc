@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup, Tag
+from csv import DictWriter
 import datetime
 from pymysql.err import IntegrityError
-from pymysql.cursors import DictCursor
 import requests
 import re
 
@@ -318,9 +318,17 @@ class TMCDatabase:
                 sql_statement += f" AND `posted_at` < {kwargs['posted_from_end']}"
         if 'limit' in keys:
             sql_statement += f" LIMIT {kwargs['limit']}"
-        with self.connection.cursor(DictCursor) as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute(sql_statement)
             results = cursor.fetchall()
             return results
 
+    def export_to_csv(self, **kwargs):
+        keys = kwargs.keys()
+        posts = self.retrieve_from_posts_database(**kwargs)
+        assert 'file_name' in keys
+        with open(kwargs['file_name'], 'w') as csvfile:
+            field_names = ['id', 'thread_title', 'username', 'posted_at', 'message', 'media', 'likes', 'loves',
+                           'helpful']
+            writer = DictWriter()
 
