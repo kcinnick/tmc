@@ -90,7 +90,7 @@ def test_retrieve_posts_from_database():
     assert len(posts) == 8
 
 
-@pytest.mark.skip(reason="Skipped by default b/c it will fail if DB isn't present and credentials aren't present.")
+@pytest.mark.skip(reason="Skipped by default b/c it will fail if DB and credentials aren't present.")
 def test_export_to_csv():
     with open('tmc/credentials.txt', 'r') as f:
         password = f.read().strip()
