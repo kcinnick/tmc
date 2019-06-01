@@ -330,7 +330,7 @@ class TMCDatabase:
         keys = kwargs.keys()
         posts = self.retrieve_from_posts_database(**kwargs)
         assert 'file_name' in keys
-        with open(kwargs['file_name'], 'w', newline='\n') as csvfile:
+        with open(kwargs['file_name'], 'w', newline='\n', encoding='utf-8') as csvfile:
             field_names = ['id', 'thread_title', 'username', 'posted_at', 'message', 'media', 'likes', 'loves',
                            'helpful', 'sentiment']
             writer = DictWriter(csvfile, fieldnames=field_names)
