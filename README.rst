@@ -43,6 +43,10 @@ TODO
 
 - Start uploading database dump when historical load is completed.
 
+Current Focus
+------
+Currently working on the plotting methods, decision being made around plotting engine right now.
+
 Credits
 -------
 
