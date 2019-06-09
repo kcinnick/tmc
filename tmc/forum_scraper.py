@@ -100,9 +100,10 @@ class Post:
 
     def upload_to_db(self, db_connection):
         message = self.message.replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
+        username = self.username.replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
         sql_statement = "INSERT INTO `posts` (`id`, `thread_title`, `username`, `posted_at`, `message`, `likes`, "
         sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}', "
-        sql_statement += f"'{self.username}', '{self.posted_at}', '{message}',"
+        sql_statement += f"'{username}', '{self.posted_at}', '{message}',"
         sql_statement += f"{self.likes}, {self.loves}, {self.helpful}, {self.sentiment})"
         print(sql_statement)
         with db_connection.cursor() as cursor:
@@ -292,6 +293,8 @@ class ForumScraper:
                     title = search_result.find('h3', class_='title').text
                     thread_id = search_result.find('h3', class_='title').find('a').get('href')
                     thread = Thread(title, self.scrape_post_by_id(thread_id=thread_id))
+                    #  What is going on here? Raises unexpected keyword arg here
+                    #  Figure this out and return to it. Where was this introduced?
                     search_results.append(thread)
                 else:
                     post_id = search_result.find('h3', class_='title').find('a').get('href')
@@ -336,3 +339,16 @@ class TMCDatabase:
             writer = DictWriter(csvfile, fieldnames=field_names)
             writer.writeheader()
             writer.writerows(posts)
+    
+    def id_gaps_in_scraped_post(self):
+        #  Useful for historical DB building.
+        #  Assumes up to date recent posts.
+        sql_statement = "SELECT `id` FROM posts"
+        with self.connection.cursor() as cursor:
+            cursor.execute(sql_statement)
+            results = cursor.fetchall()
+            last_post_id = results[-1][-1]
+            results = set([i[0] for i in results])
+            list_of_possible_values = set(range(1, last_post_id + 1))
+            outstanding_posts = [post_id for post_id in list_of_possible_values if post_id not in results]
+            return outstanding_posts
