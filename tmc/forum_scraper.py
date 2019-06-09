@@ -309,7 +309,7 @@ class TMCDatabase:
     def __init__(self, connection):
         self.connection = connection
 
-    def retrieve_from_posts_database(self, attrs='*', **kwargs):
+    def retrieve_from_posts_database(self, debug=False, attrs='*', **kwargs):
         keys = kwargs.keys()
         if 'attrs' not in keys:
             kwargs['attrs'] = attrs
@@ -319,11 +319,13 @@ class TMCDatabase:
             if 'to_post_id' in keys:
                 sql_statement += f"AND `id` < {kwargs['to_post_id']}"
         if 'posted_at_start' in keys:
-            sql_statement += f"`posted_at` > {kwargs['posted_at_start']}"
+            sql_statement += f"`posted_at` > '{kwargs['posted_at_start']}'"
             if 'posted_at_end' in keys:
-                sql_statement += f" AND `posted_at` < {kwargs['posted_at_end']}"
+                sql_statement += f" AND `posted_at` < '{kwargs['posted_at_end']}'"
         if 'limit' in keys:
             sql_statement += f" LIMIT {kwargs['limit']}"
+        if debug:
+            print(sql_statement)
         with self.connection.cursor(DictCursor) as cursor:
             cursor.execute(sql_statement)
             results = cursor.fetchall()
@@ -352,3 +354,9 @@ class TMCDatabase:
             list_of_possible_values = set(range(1, last_post_id + 1))
             outstanding_posts = [post_id for post_id in list_of_possible_values if post_id not in results]
             return outstanding_posts
+
+    def retrieve_posts_for_timeframe(self, posted_at_start, posted_at_end, debug=False):
+        results = self.retrieve_from_posts_database(
+            posted_at_start=posted_at_start, posted_at_end=posted_at_end, debug=debug)
+        
+        return results
