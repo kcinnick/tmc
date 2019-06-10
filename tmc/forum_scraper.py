@@ -361,22 +361,24 @@ class TMCDatabase:
         
         return results
     
-    def graph_posts(self, **kwargs):
+    def graph_amount_of_posts_for_daterange(self, skip=1, **kwargs):
+        #  Abstract this out a bit for the future
+        #  Think sentiment graphing, etc.
         import pandas as pd
         import matplotlib.pyplot as plt
-        keys = kwargs.keys()
-        datelist = pd.date_range('2019-06-01', periods=10).to_pydatetime().tolist()
+
+        datelist = pd.date_range(kwargs['start_date'], periods=kwargs['periods']).to_pydatetime().tolist()
         results = []
         dates = []
         with self.connection.cursor() as cursor:
             for date in datelist:
                 sql_statement = "SELECT COUNT(*) FROM POSTS WHERE `posted_at` > '{0}' AND `posted_at` < '{1}'".format(
-                    date.strftime('%Y-%m-%d 00:00:00'), (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d 00:00:00')
+                    date.strftime('%Y-%m-%d 00:00:00'), (date + datetime.timedelta(days=skip)).strftime('%Y-%m-%d 00:00:00')
                 )
                 dates.append(date.strftime('%Y-%m-%d'))
                 cursor.execute(sql_statement)
                 results.append(cursor.fetchone()[0])
-        
+
         plt.plot(dates, results)
         plt.ylabel('posts')
         plt.xlabel('dates')
