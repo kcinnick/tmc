@@ -333,8 +333,8 @@ class TMCDatabase:
 
     def export_to_csv(self, **kwargs):
         keys = kwargs.keys()
-        posts = self.retrieve_from_posts_database(**kwargs)
         assert 'file_name' in keys
+        posts = self.retrieve_from_posts_database(**kwargs)
         with open(kwargs['file_name'], 'w', newline='\n', encoding='utf-8') as csvfile:
             field_names = ['id', 'thread_title', 'username', 'posted_at', 'message', 'media', 'likes', 'loves',
                            'helpful', 'sentiment']
@@ -360,3 +360,25 @@ class TMCDatabase:
             posted_at_start=posted_at_start, posted_at_end=posted_at_end, debug=debug)
         
         return results
+    
+    def graph_posts(self, **kwargs):
+        import pandas as pd
+        import matplotlib.pyplot as plt
+        keys = kwargs.keys()
+        datelist = pd.date_range('2019-06-01', periods=10).to_pydatetime().tolist()
+        results = []
+        dates = []
+        with self.connection.cursor() as cursor:
+            for date in datelist:
+                sql_statement = "SELECT COUNT(*) FROM POSTS WHERE `posted_at` > '{0}' AND `posted_at` < '{1}'".format(
+                    date.strftime('%Y-%m-%d 00:00:00'), (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d 00:00:00')
+                )
+                dates.append(date.strftime('%Y-%m-%d'))
+                cursor.execute(sql_statement)
+                results.append(cursor.fetchone()[0])
+        
+        plt.plot(dates, results)
+        plt.ylabel('posts')
+        plt.xlabel('dates')
+        plt.show()
+        return
