@@ -36,11 +36,9 @@ TODO
 
 - In consideration of things like sentiment analysis and overall data quality, need to come up with a way to handle posts that contain quotes of other posts. Quotes are easy to ID, so the only thing to decide is how exactly to handle this - maybe a "in reply to" column in the database?
 
-- Write a method to plot # of comments for a time range, then narrow that to sentiment posts w/i time range, etc.
-
 Current Focus
 ------
-Currently working on the plotting methods.
+Now that I have an early vision of graphing done, I'm going to focus on the 'posts containing other posts' issue mentioned in the TODOs.  Since this is a data quality issue it's fairly high priority so that'll be the focus until further notice.
 
 Credits
 -------
