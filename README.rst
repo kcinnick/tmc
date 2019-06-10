@@ -23,13 +23,12 @@ Features
 * Search database for any date range, post ID, username, etc.
 * Export scraped posts to CSV 
 
-My current thinking is that if I just repeatedly scrape the recent posts page (https://teslamotorsclub.com/tmc/recent-posts/), that will provide the sufficient data to inform every other view (i.e. search by thread/poster/sentiment/keyword/etc.) in a database format.
+My current thinking is that if I just repeatedly scrape the recent posts page (https://teslamotorsclub.com/tmc/recent-posts/), that will provide the sufficient data to inform every other view (i.e. search by thread/poster/sentiment/keyword/etc.) in a database format.  This strategy seems to be working so far.
 
 Open questions:
 
 - how to handle deleted/edited posts?
 - How do we handle poll parsing? Do we even want to handle poll parsing?
-- The new `TMCDatabase` class will be pretty difficult for others to test if all of the methods require a database connection and the database that I've built from this. However, if the methods only return the requisite SQL string, the only thing I'd really be testing is Python's string parsing & building capacity.  I'm leaning towards just writing tests that are skipped by default right now.
 
 TODO
 ----
@@ -37,15 +36,11 @@ TODO
 
 - In consideration of things like sentiment analysis and overall data quality, need to come up with a way to handle posts that contain quotes of other posts. Quotes are easy to ID, so the only thing to decide is how exactly to handle this - maybe a "in reply to" column in the database?
 
-- Need to add method to ID posts that got skipped in the scraping process for whatever reason - current thinking is to do a left outer join against all currently possible post ID values and collect from there, while noting those values for future reference.
-
 - Write a method to plot # of comments for a time range, then narrow that to sentiment posts w/i time range, etc.
-
-- Start uploading database dump when historical load is completed.
 
 Current Focus
 ------
-Currently working on the plotting methods, decision being made around plotting engine right now.
+Currently working on the plotting methods.
 
 Credits
 -------
