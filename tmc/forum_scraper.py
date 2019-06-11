@@ -118,8 +118,12 @@ class Post:
             replies.append(quote.extract())
         
         reply_ids = []
+
         for reply in replies:
-            reply_ids.append(reply.find('a', class_='AttributionLink').get('href').split('-')[-1])
+            try:
+                reply_ids.append(reply.find('a', class_='AttributionLink').get('href').split('-')[-1])
+            except AttributeError:
+                reply_ids.append(None)
 
         return post, reply_ids
 
