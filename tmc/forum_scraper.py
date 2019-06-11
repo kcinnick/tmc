@@ -33,7 +33,13 @@ class User:
 
 
 class Post:
-    def __init__(self, post: Tag, thread_title: str):
+    def __init__(self, post: Tag = None, thread_title: str = None, db_entry = None):
+        if post:
+            self.build_from_post(post, thread_title)
+        else:
+            self.build_from_db(db_entry)
+    
+    def build_from_post(self, post, thread_title):
         self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
         self.thread_title = thread_title.replace("'", "\\'").replace('"', '\\"').split('Discussion in ')[0].strip()
         self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
@@ -58,6 +64,20 @@ class Post:
         self.helpful = output_dict.get('Helpful', 0)
 
         self.sentiment = 0
+    
+    def build_from_db(self, db_entry):
+        if type(db_entry) == dict:
+            self.id = db_entry['id']
+            self.username = db_entry['username']
+            self.posted_at = db_entry['posted_at']
+            self.message = db_entry['message']
+            self.media = db_entry['media']
+            self.likes = db_entry['likes']
+            self.loves = db_entry['loves']
+            self.helpful = db_entry['helpful']
+            self.sentiment = db_entry['sentiment']
+        else:
+            raise TypeError(f'Building from type {type(db_entry)} not supported yet.')
 
     @staticmethod
     def parse_output_list(output_list: dict):
@@ -329,7 +349,11 @@ class TMCDatabase:
         with self.connection.cursor(DictCursor) as cursor:
             cursor.execute(sql_statement)
             results = cursor.fetchall()
-            return results
+            parsed_results = []
+            for result in results:
+                p = Post(db_entry=result)
+                parsed_results.append(p)
+            return parsed_results
 
     def export_to_csv(self, **kwargs):
         keys = kwargs.keys()
