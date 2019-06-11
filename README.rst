@@ -28,7 +28,7 @@ My current thinking is that if I just repeatedly scrape the recent posts page (h
 Open questions:
 
 - how to handle deleted/edited posts?
-- How do we handle poll parsing? Do we even want to handle poll parsing?
+- How do we handle poll parsing? Do we even want to handle poll parsing? FWIW, I'm currently leaning towards no - both because it'd be a pain in the butt to keep updated and I'm not convinced there's much value in it.
 
 TODO
 ----
