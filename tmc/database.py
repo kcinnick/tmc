@@ -1,3 +1,4 @@
+from csv import DictWriter
 import datetime
 from tmc.post import Post
 from pymysql.cursors import DictCursor
