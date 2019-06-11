@@ -52,6 +52,8 @@ class Post:
         except ValueError:
             self.posted_at = post.find('span', class_='DateTime').get('title')
             self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
+
+        post, self.reply_ids = self.clean_message(post)
         self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace(
             'Click to expand...', '\n"').strip()
         self.media = self.get_media(post)
@@ -108,6 +110,18 @@ class Post:
         iframe = post.find('iframe')
         if iframe:
             return iframe.get('src')
+    
+    def clean_message(self, post):
+        quotes = post.find_all('div', class_='bbCodeBlock bbCodeQuote')
+        replies = []
+        for quote in quotes:
+            replies.append(quote.extract())
+        
+        reply_ids = []
+        for reply in replies:
+            reply_ids.append(reply.find('a', class_='AttributionLink').get('href').split('-')[-1])
+
+        return post, reply_ids
 
     def get_sentiment(self, session=requests.Session()):
         """
