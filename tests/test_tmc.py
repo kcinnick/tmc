@@ -73,6 +73,11 @@ def test_scrape_recent_posts():
     recent_posts = forum_scraper.scrape_recent_posts(pages=2)
     assert len(recent_posts) == 50
 
+def test_clean_message():
+    forum_scraper = ForumScraper()
+    post = forum_scraper.scrape_post_by_id(post_id=3741808)
+    assert post.message.startswith('My mistake, you have my apologies.')
+    assert post.reply_ids == ['3741789']
 
 @pytest.mark.skip(reason="Skipped by default b/c it will fail if DB and credentials aren't present.")
 def test_retrieve_posts_from_database():
@@ -103,3 +108,9 @@ def test_export_to_csv():
     )
     tmc_database = TMCDatabase(connection)
     tmc_database.export_to_csv(file_name='test.csv', from_post_id=0, to_post_id=10, attrs='*')
+
+
+@pytest.mark.skip(reason="Skipped by default b/c it will fail if DB and credentials aren't present.")
+def test_build_post_from_db():
+    # TODO: write test!
+    return
