@@ -32,7 +32,7 @@ Open questions:
 
 TODO
 ----
-- My thoughts on handling deleted posts currently are twofold: step one, setting up a database that records *only* a post's ID and if it had been deleted at last check.  This would not require changing the existing database, which I prefer as a solution because that database is constantly being written to.  Might need to be expanded in the future if I decide to tackle edited posts, which carry their own questions (do they show up in recent posts, etc.)
+- My thoughts on handling deleted posts currently are twofold: step one, setting up a database that records *only* a post's ID and if it had been deleted at last check.  This would not require changing the existing database, which I prefer as a solution because that database is constantly being written to.  Might need to be expanded in the future if I decide to tackle edited posts, which carry their own questions (do they show up in recent posts, etc.)  This has become more of a priority because deleted posts are always going to show as 'tbd' under the current logic because they can never be evaluated - just catching with try/excepts for now but more permanent solution is needed.
 
 - Re-scrape old posts to get "in reply to" value/fix message value (ugh)
 
@@ -40,7 +40,8 @@ TODO
 
 Current Focus
 ------
-Now that I have an early vision of graphing done, I'm going to focus on the 'posts containing other posts' issue mentioned in the TODOs.  Since this is a data quality issue it's fairly high priority so that'll be the focus until further notice.
+- Re-scraping old posts to get "in reply to" value/fix message value (ugh)
+- Adding "in reply to" logic to current scraping
 
 Credits
 -------
