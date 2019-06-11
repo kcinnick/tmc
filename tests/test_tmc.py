@@ -4,7 +4,10 @@
 """Tests for `tmc` package."""
 
 from bs4 import BeautifulSoup
-from tmc.forum_scraper import User, Post, ForumScraper, TMCDatabase
+from tmc.forum_scraper import ForumScraper
+from tmc.database import TMCDatabase
+from tmc.post import Post, Thread
+from tmc.user import User
 import pytest
 
 
