@@ -13,3 +13,4 @@ CREATE TABLE `posts` (
 	`sentiment` INT,
 	PRIMARY KEY (`id`)
 );
+ALTER TABLE `posts` ADD `in_reply_to` VARCHAR(200) DEFAULT 'tbd';
