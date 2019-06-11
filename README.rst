@@ -34,7 +34,7 @@ TODO
 ----
 - My thoughts on handling deleted posts currently are twofold: step one, setting up a database that records *only* a post's ID and if it had been deleted at last check.  This would not require changing the existing database, which I prefer as a solution because that database is constantly being written to.  Might need to be expanded in the future if I decide to tackle edited posts, which carry their own questions (do they show up in recent posts, etc.)
 
-- In consideration of things like sentiment analysis and overall data quality, need to come up with a way to handle posts that contain quotes of other posts. Quotes are easy to ID, so the only thing to decide is how exactly to handle this - maybe a "in reply to" column in the database?
+- Add "in_reply_to" column to database, re-scrape old posts (ugh)
 
 Current Focus
 ------
