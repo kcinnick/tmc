@@ -23,6 +23,8 @@ class Post:
             self.posted_at = post.find('span', class_='DateTime').get('title')
             self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
 
+        self.reply_ids = []
+
         post, self.reply_ids = self.clean_message(post)
         self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace(
             'Click to expand...', '\n"').strip()
@@ -93,7 +95,7 @@ class Post:
             try:
                 reply_ids.append(reply.find('a', class_='AttributionLink').get('href').split('-')[-1])
             except AttributeError:
-                reply_ids.append(None)
+                continue
 
         return post, reply_ids
 
@@ -110,9 +112,9 @@ class Post:
         message = self.message.replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
         username = self.username.replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
         sql_statement = "INSERT INTO `posts` (`id`, `thread_title`, `username`, `posted_at`, `message`, `likes`, "
-        sql_statement += f"`loves`, `helpful`, `sentiment`) VALUES ('{self.id}', '{self.thread_title}', "
+        sql_statement += f"`loves`, `helpful`, `sentiment`, `in_reply_to`) VALUES ('{self.id}', '{self.thread_title}', "
         sql_statement += f"'{username}', '{self.posted_at}', '{message}',"
-        sql_statement += f"{self.likes}, {self.loves}, {self.helpful}, {self.sentiment})"
+        sql_statement += f" {self.likes}, {self.loves}, {self.helpful}, {self.sentiment}, '{','.join(self.reply_ids)}')"
         print(sql_statement)
         with db_connection.cursor() as cursor:
             cursor.execute(sql_statement)
