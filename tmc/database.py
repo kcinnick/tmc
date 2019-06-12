@@ -1,5 +1,6 @@
 from csv import DictWriter
 import datetime
+from tmc.forum_scraper import ForumScraper
 from tmc.post import Post
 from pymysql.cursors import DictCursor
 
@@ -8,7 +9,7 @@ class TMCDatabase:
     def __init__(self, connection):
         self.connection = connection
 
-    def retrieve_from_posts_database(self, debug=False, attrs='*', **kwargs):
+    def retrieve_from_posts_database(self, debug=False, attrs='*', build=True, **kwargs):
         keys = kwargs.keys()
         if 'attrs' not in keys:
             kwargs['attrs'] = attrs
@@ -21,6 +22,12 @@ class TMCDatabase:
             sql_statement += f"`posted_at` > '{kwargs['posted_at_start']}'"
             if 'posted_at_end' in keys:
                 sql_statement += f" AND `posted_at` < '{kwargs['posted_at_end']}'"
+        if 'in_reply_to' in keys:
+            sql_statement += f"`in_reply_to` = '{kwargs['in_reply_to']}'"
+        if 'id' in keys:
+            if sql_statement.endswith('\''):
+                sql_statement += ' AND '
+            sql_statement += f"`id` = {kwargs['id']}"
         if 'limit' in keys:
             sql_statement += f" LIMIT {kwargs['limit']}"
         if debug:
@@ -30,8 +37,9 @@ class TMCDatabase:
             results = cursor.fetchall()
             parsed_results = []
             for result in results:
-                p = Post(db_entry=result)
-                parsed_results.append(p)
+                if build:
+                    result = Post(db_entry=result)
+                parsed_results.append(result)
             return parsed_results
 
     def export_to_csv(self, **kwargs):
@@ -86,4 +94,36 @@ class TMCDatabase:
         plt.ylabel('posts')
         plt.xlabel('dates')
         plt.show()
+        return
+    
+    def alter_records_to_include_in_reply_to(self, limit=100, debug=False):
+        """
+        When this database was originally written, there hadn't been a final decision
+        made about how to handle posts in reply to other posts.  With sentiment analysis
+        it's become clear that a way to handle these posts is necessary and thus the records
+        entered prior to that decision being made need to be altered to conform to the new
+        schema.
+        """
+        if limit:
+            post_ids = self.retrieve_from_posts_database(debug=True, attrs='(`id`)', in_reply_to='tbd', build=False, limit=limit)
+        else:
+            post_ids = self.retrieve_from_posts_database(debug=True, attrs='(`id`)', in_reply_to='tbd', build=False)
+
+        forum_scraper = ForumScraper()
+        for post_id in reversed(post_ids):
+            try:  #  THIS IS A TEMPORARY SOLUTION!
+                  #  DEAL WITH THIS ASAP!
+                post = forum_scraper.scrape_post_by_id(post_id=post_id['id'])
+            except ValueError:
+                continue
+            if debug:
+                print(post_id)
+            sql_statement = "UPDATE `posts` SET `message` = '{}', `in_reply_to` = '{}' WHERE `id` = {}".format(
+                post.message.replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n'),
+                str(','.join(post.reply_ids)),
+                post_id['id']
+            )
+            with self.connection.cursor() as cursor:
+                cursor.execute(sql_statement)
+                self.connection.commit()
         return
