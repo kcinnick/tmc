@@ -79,11 +79,11 @@ class ForumScraper:
         unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
 
         if 'The requested post could not be found.' in soup.text:
-            raise ValueError
+            raise ValueError(post_id)
         elif 'The requested thread could not be found.' in soup.text:
-            raise ValueError
+            raise ValueError(post_id)
         elif 'Tesla Motors Club - Error' in soup.text:
-            raise ValueError
+            raise ValueError(post_id)
         else:
             return Post(unparsed_post, thread_title)
 
