@@ -67,9 +67,10 @@ def test_message_get_sentiment():
     forum_scraper = ForumScraper()
     
     post = forum_scraper.scrape_post_by_id(post_id=3507092)
-    post.get_sentiment()
-    assert post.sentiment['label'] == 'neg'
-
+    with open('tmc/credentials.txt', 'r') as f:
+        api_key = f.readlines()[-1].strip()
+    post.get_sentiment(google_api_key=api_key)
+    assert post.sentiment['documentSentiment']['magnitude'] == 0.5
 
 def test_scrape_recent_posts():
     forum_scraper = ForumScraper()
@@ -85,7 +86,7 @@ def test_clean_message():
 @pytest.mark.skip(reason="Skipped by default b/c it will fail if DB and credentials aren't present.")
 def test_retrieve_posts_from_database():
     with open('tmc/credentials.txt', 'r') as f:
-        password = f.read().strip()
+        password = f.readlines()[0].strip()
 
     import pymysql
     connection = pymysql.connect(
