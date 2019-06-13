@@ -103,3 +103,4 @@ ENV/
 
 # local file
 tmc/tmc.py
+tmc/credentials.txt
