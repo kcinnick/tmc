@@ -99,14 +99,20 @@ class Post:
 
         return post, reply_ids
 
-    def get_sentiment(self, session=requests.Session()):
+    def get_sentiment(self, session=requests.Session(), google_api_key=None):
         """
         Gets sentiment data of post.
         """
-
-        r = session.post('http://text-processing.com/api/sentiment/',
-                         data={'text': self.message})
+        if not google_api_key:
+            raise(ValueError('Calling this method requires a valid google_api_key for the Cloud Natural Voice API.'))
+        r = session.post(f'https://language.googleapis.com/v1/documents:analyzeSentiment?fields=documentSentiment%2Clanguage&key={google_api_key}',
+                         json={"document":{"content": self.message,
+                                           "type": "PLAIN_TEXT"}
+                                           }
+        )
         self.sentiment = r.json()
+        
+        return
 
     def upload_to_db(self, db_connection):
         message = self.message.replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n')
