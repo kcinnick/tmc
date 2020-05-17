@@ -52,7 +52,7 @@ class TMCDatabase:
             writer = DictWriter(csvfile, fieldnames=field_names)
             writer.writeheader()
             writer.writerows(posts)
-    
+
     def id_gaps_in_scraped_post(self):
         #  Useful for historical DB building.
         #  Assumes up to date recent posts.
@@ -69,9 +69,9 @@ class TMCDatabase:
     def retrieve_posts_for_timeframe(self, posted_at_start, posted_at_end, debug=False):
         results = self.retrieve_from_posts_database(
             posted_at_start=posted_at_start, posted_at_end=posted_at_end, debug=debug)
-        
+
         return results
-    
+
     def graph_amount_of_posts_for_daterange(self, skip=1, **kwargs):
         #  Abstract this out a bit for the future
         #  Think sentiment graphing, etc.
@@ -95,7 +95,7 @@ class TMCDatabase:
         plt.xlabel('dates')
         plt.show()
         return
-    
+
     def alter_records_to_include_in_reply_to(self, limit=100, debug=False):
         """
         When this database was originally written, there hadn't been a final decision
@@ -105,9 +105,9 @@ class TMCDatabase:
         schema.
         """
         if limit:
-            post_ids = self.retrieve_from_posts_database(debug=True, attrs='(`id`)', in_reply_to='tbd', build=False, limit=limit)
+            post_ids = self.retrieve_from_posts_database(attrs='(`id`)', in_reply_to='tbd', build=False, limit=limit)
         else:
-            post_ids = self.retrieve_from_posts_database(debug=True, attrs='(`id`)', in_reply_to='tbd', build=False)
+            post_ids = self.retrieve_from_posts_database(attrs='(`id`)', in_reply_to='tbd', build=False)
 
         forum_scraper = ForumScraper()
         for post_id in reversed(post_ids):
