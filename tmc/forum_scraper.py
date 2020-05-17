@@ -1,9 +1,9 @@
-from bs4 import BeautifulSoup, Tag
-from csv import DictWriter
-import datetime
+from bs4 import BeautifulSoup
+
+from tqdm import tqdm
+
 from tmc.post import Post, Thread
 from pymysql.err import IntegrityError
-from pymysql.cursors import DictCursor
 import requests
 import re
 
@@ -29,19 +29,24 @@ class ForumScraper:
     def scrape_recent_posts(self, pages: int = 10, db_connection=None):
         """
         Scrapes most recent posts as shown by https://teslamotorsclub.com/tmc/recent-posts/
-        and returns post objects for each new post.
+        and returns post objects for each new post. Only returns 10 pages worth of posts.
         """
 
         url = 'https://teslamotorsclub.com/tmc/recent-posts/'
-
+        if not db_connection:
+            print('DB connection info not found.\n')
         recent_posts = []
         integrity_errors = 0
-        for page_number in range(1, pages):
+        for page_number in tqdm(range(1, pages + 1)):
             recent_posts_url = url + f'?page={page_number}'
             response = self.session.get(recent_posts_url)
             soup = BeautifulSoup(response.content, 'html.parser')
-            discussion_list_items = soup.find('ol', class_='discussionListItems')
-            for post in discussion_list_items.find_all('dl', class_='lastPostInfo'):
+            try:
+                discussion_list_items = soup.find('ol', class_='discussionListItems').find_all('dl', class_='lastPostInfo')
+            except AttributeError as e:
+                print('Error: {}'.format(e))
+                print(recent_posts_url)
+            for post in discussion_list_items:
                 post_id = post.find('a').get('href')[6:-1]
                 post_url = 'https://teslamotorsclub.com/tmc/posts/' + post_id
                 post_response = self.session.get(post_url)
@@ -52,14 +57,17 @@ class ForumScraper:
                 if db_connection:
                     try:
                         parsed_post.upload_to_db(db_connection)
-                        print('Post uploaded, moving on.\n')
+                        print(f'Post {post_id} uploaded.\n')
                     except IntegrityError:
                         integrity_errors += 1
                         print('Duplicate found - ignoring.\n')
-                        if integrity_errors > 11:
-                            print('Old data reached - stopping search.')
-                            return
+                        #if integrity_errors > 11:
+                        #    print('Old data reached - stopping search.')
+                        #    return
+                        # Commented this out because this may not be desired behavior
+                        # given that recent-posts only returns 10 pages worth of posts.
                 recent_posts.append(parsed_post)
+
 
         return recent_posts
 
