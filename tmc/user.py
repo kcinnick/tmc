@@ -1,5 +1,6 @@
 from bs4 import Tag
 
+
 class User:
     def __init__(self):
         self.username = None
@@ -8,7 +9,7 @@ class User:
         self.messages = None
         self.location = None
 
-    def get_info(self, post: Tag = None, url: str = None):
+    def _build(self, post: Tag = None, url: str = None):
         """
         Retrieves basic user information.
         TODO: Add logic for parsing from URL.
