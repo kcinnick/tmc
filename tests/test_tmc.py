@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Tests for `tmc` package."""
-
+import requests
 from bs4 import BeautifulSoup
 from tmc.forum_scraper import ForumScraper
 from tmc.database import TMCDatabase
@@ -11,11 +11,13 @@ from tmc.user import User
 import pytest
 
 
-def test_user_collection():
-    with open('tests/fixtures/single_post.html', 'r') as f:
-        post = BeautifulSoup(f.read(), 'html.parser')
-        user = User()
-        user.get_info(post=post)
+def test_user_build():
+
+    r = requests.get('https://teslamotorsclub.com/tmc/threads/model-s-delivery-update.9489/#post-167939')
+    page = BeautifulSoup(r.content, 'html.parser')
+    post = page.find('article', id='js-post-175666')
+    user = User()
+    user._build(post=post)
 
     assert user.username == 'Chickenlittle'
     assert user.joined == 'Sep 10, 2013'
@@ -24,9 +26,10 @@ def test_user_collection():
 
 def test_media_post_collect():
     thread_title = 'test_media_post_collect method'
-    with open('tests/fixtures/single_media_post.html', 'r') as f:
+    with open('fixtures/single_media_post.html', 'r') as f:
         post = BeautifulSoup(f.read(), 'html.parser')
         p = Post(post, thread_title)
+        print(vars(p))
 
     assert p.id == 3463146
     assert p.username == 'gavine'
@@ -37,8 +40,10 @@ def test_media_post_collect():
 
 def test_scrape_posts_from_thread():
     forum_scraper = ForumScraper()
-
-    posts = forum_scraper.scrape_posts_from_thread(url='https://teslamotorsclub.com/tmc/threads/i-thought-i-would-mention-that-i-think-tesla-has-one-of-the-nicest-websites.14/')
+    url = 'https://teslamotorsclub.com/tmc/threads/i-thought-i-woul'
+    url += 'd-mention-that-i-think-tesla-has-one-of-the-nicest-websites.14'
+    print(url)
+    posts = forum_scraper.scrape_posts_from_thread(url=url)
     assert len(posts) == 4
 
 

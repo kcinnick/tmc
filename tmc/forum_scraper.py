@@ -105,18 +105,17 @@ class ForumScraper:
 
         response = self.session.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
-        number_of_pages = self.get_number_of_pages_in_thread(soup)
+        number_of_pages = self.get_number_of_pages_in_thread(soup) + 1
+        for page_number in range(1, number_of_pages):
+            if page_number != 1:
+                request_url = url + f'page-{page_number}'
+                response = self.session.get(request_url)
 
-        for page_number in range(0, number_of_pages):
-            page_number += 1
-            if page_number == 1:
-                pass
-            else:
-                response = self.session.get(url + f'page-{page_number}')
-                soup = BeautifulSoup(response.content, 'html.parser')
-
-            unparsed_posts = soup.find_all('li', attrs={'id': re.compile('fc-post-\d+')})
-            thread_title = soup.find('div', class_='titleBar').text.strip().split('\n')[0]
+            soup = BeautifulSoup(response.content, 'html.parser')
+            unparsed_posts = [i for i in soup.find_all('article') if i.get('data-author')]
+            print(f"{len(unparsed_posts)} posts found.\n")
+            thread_title = soup.find('meta', {"property": "og:title"}).get('content')
+            print(f'Scraping thread: "{thread_title}" at {url}')
 
             for post in unparsed_posts:
                 p = Post(post, thread_title)

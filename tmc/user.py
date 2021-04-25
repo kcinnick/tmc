@@ -14,13 +14,18 @@ class User:
         Retrieves basic user information.
         TODO: Add logic for parsing from URL.
         """
-
         if post:
-            user_info = post.find('div', class_='messageUserInfo')
+            user_info = post.find('div', class_='message-userDetails')
             self.username = user_info.find('a', class_='username').text
-            self.member_type = user_info.find('em', class_='userTitle').text
+            self.member_type = user_info.find('h5', class_='userTitle message-userTitle').text
 
-            extra_user_info = {i.text[:-1]: i.find_next('dd').text.strip() for i in post.find_all('dt')}
-            self.joined = extra_user_info['Joined']
-            self.messages = ([], extra_user_info['Messages'])
-            self.location = extra_user_info['Location']
+            extra_user_info = post.find('div', class_='message-userExtras')
+            keys = [i.find('span').get('title') for i in extra_user_info.find_all('dt')]
+            values = [i.text for i in extra_user_info.find_all('dd')]
+            extra_user_info = {keys[i]: values[i] for i in range(len(keys))}
+
+            self.joined = extra_user_info.get('Joined')
+            self.messages = ([], extra_user_info.get('Messages'))
+            self.location = extra_user_info.get('Location')
+        else:
+            raise NotImplementedError
