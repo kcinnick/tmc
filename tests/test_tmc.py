@@ -19,23 +19,23 @@ def test_user_build():
     user = User()
     user._build(post=post)
 
-    assert user.username == 'Chickenlittle'
-    assert user.joined == 'Sep 10, 2013'
-    assert user.location == 'Virginia'
+    assert user.username == 'Thread Summary'
+    assert user.joined == 'Aug 14, 2012'
+    assert user.location is None
 
 
 def test_media_post_collect():
     thread_title = 'test_media_post_collect method'
-    with open('fixtures/single_media_post.html', 'r') as f:
-        post = BeautifulSoup(f.read(), 'html.parser')
-        p = Post(post, thread_title)
-        print(vars(p))
+    r = requests.get('https://teslamotorsclub.com/tmc/threads/tip-how-to-open-your-charge-port-with-a-key-fob.91313/#post-2119568')
+    page = BeautifulSoup(r.content, 'html.parser')
+    post = page.find('article', id='js-post-2119568')
+    p = Post(post, thread_title)
 
-    assert p.id == 3463146
-    assert p.username == 'gavine'
-    assert p.media == 'https://www.youtube.com/embed/IsO3QiCR6_g?wmode=opaque'
-    assert p.likes == 10
-    assert p.loves == 1
+    assert p.id == '2119568'
+    assert p.username == 'AlexG'
+    assert p.media == 'https://www.youtube.com/embed/dS4y-rlp9qA?wmode=opaque&start=0'
+    assert p.likes == 0
+    assert p.loves == 0
 
 
 def test_scrape_posts_from_thread():

@@ -16,7 +16,7 @@ class Post:
         try:
             self.id = re.search('\/posts\/(\d+)\/', str(post)).group(1)
         except AttributeError:
-            return
+            raise AttributeError
         print("Post ID is ", self.id)
         self.thread_title = thread_title.replace("'", "\\'").replace('"', '\\"').split('Discussion in ')[0].strip()
         self.username = post.find('a', class_='username').text
@@ -79,6 +79,7 @@ class Post:
         """
 
         iframe = post.find('iframe')
+
         if iframe:
             return iframe.get('src')
 

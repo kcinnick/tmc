@@ -78,13 +78,13 @@ class ForumScraper:
         """
 
         url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
-
+        print('\n', url)
         response = self.session.get(url)
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        thread_title = soup.find('div', class_='titleBar').text.strip()
-        unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
+        thread_title = soup.find('meta', attrs={'property': 'og:title'}).get('content')
+        unparsed_post = soup.find('article', attrs={'id': re.compile(f'js-post-{post_id}')})
 
         if 'The requested post could not be found.' in soup.text:
             raise ValueError(post_id)
