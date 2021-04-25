@@ -14,7 +14,9 @@ class Post:
 
     def build_from_post(self, post, thread_title):
         try:
-            self.id = re.search('\/posts\/(\d+)\/', str(post)).group(1)
+            self.id = int(
+                re.search('\/posts\/(\d+)\/', str(post)).group(1)
+            )
         except AttributeError:
             raise AttributeError
         print("Post ID is ", self.id)
@@ -84,7 +86,7 @@ class Post:
             return iframe.get('src')
 
     def clean_message(self, post):
-        quotes = post.find_all('div', class_='bbCodeBlock bbCodeQuote')
+        quotes = post.find_all('blockquote')
         replies = []
         for quote in quotes:
             replies.append(quote.extract())
@@ -93,7 +95,7 @@ class Post:
 
         for reply in replies:
             try:
-                reply_ids.append(reply.find('a', class_='AttributionLink').get('href').split('-')[-1])
+                reply_ids.append(reply.find('a', class_='bbCodeBlock-sourceJump').get('href').split('=')[-1])
             except AttributeError:
                 continue
 
