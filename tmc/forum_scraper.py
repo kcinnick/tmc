@@ -32,41 +32,27 @@ class ForumScraper:
         and returns post objects for each new post. Only returns 10 pages worth of posts.
         """
 
-        url = 'https://teslamotorsclub.com/tmc/recent-posts/'
+        url = 'https://teslamotorsclub.com/tmc/whats-new/posts/129206/'
         if not db_connection:
             print('DB connection info not found.\n')
         recent_posts = []
         integrity_errors = 0
         for page_number in tqdm(range(1, pages + 1)):
-            recent_posts_url = url + f'?page={page_number}'
+            recent_posts_url = url + f'?page-{page_number}'
             response = self.session.get(recent_posts_url)
             soup = BeautifulSoup(response.content, 'html.parser')
             try:
-                discussion_list_items = soup.find('ol', class_='discussionListItems').find_all('dl', class_='lastPostInfo')
+                discussion_list_items = soup.find('div', class_='structItemContainer').find_all('div', class_='structItem')
             except AttributeError as e:
                 print('Error: {}'.format(e))
-                print(recent_posts_url)
+                raise e
             for post in discussion_list_items:
-                post_id = post.find('a').get('href')[6:-1]
-                post_url = 'https://teslamotorsclub.com/tmc/posts/' + post_id
-                post_response = self.session.get(post_url)
-                post_soup = BeautifulSoup(post_response.content, 'html.parser')
-                targeted_post = post_soup.find('li', attrs={'id': f'fc-post-{post_id}'})
-                thread_title = post_soup.find('div', class_='titleBar').text.strip().split('\n')[0]
-                parsed_post = Post(targeted_post, thread_title)
-                if db_connection:
-                    try:
-                        parsed_post.upload_to_db(db_connection)
-                        print(f'Post {post_id} uploaded.\n')
-                    except IntegrityError:
-                        integrity_errors += 1
-                        print('Duplicate found - ignoring.\n')
-                        #if integrity_errors > 11:
-                        #    print('Old data reached - stopping search.')
-                        #    return
-                        # Commented this out because this may not be desired behavior
-                        # given that recent-posts only returns 10 pages worth of posts.
-                recent_posts.append(parsed_post)
+                latest_ = post.find('div', class_='structItem-cell structItem-cell--latest').find_all('a')
+                latest_post_url = 'https://teslamotorsclub.com' + latest_[1].get('href')
+                response = self.session.get(latest_post_url)
+                post_id = response.url.split('-')[-1]
+                post_object = self.scrape_post_by_id(post_id)
+                recent_posts.append(post_object)
 
 
         return recent_posts
@@ -77,14 +63,15 @@ class ForumScraper:
         and returns a Post object.
         """
 
+        print(post_id)
         url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
-
+        print('\n81', url)
         response = self.session.get(url)
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        thread_title = soup.find('div', class_='titleBar').text.strip()
-        unparsed_post = soup.find('li', attrs={'id': re.compile(f'fc-post-{post_id}')})
+        thread_title = soup.find('meta', attrs={'property': 'og:title'}).get('content')
+        unparsed_post = soup.find('article', attrs={'id': re.compile(f'js-post-{post_id}')})
 
         if 'The requested post could not be found.' in soup.text:
             raise ValueError(post_id)
@@ -105,18 +92,17 @@ class ForumScraper:
 
         response = self.session.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
-        number_of_pages = self.get_number_of_pages_in_thread(soup)
+        number_of_pages = self.get_number_of_pages_in_thread(soup) + 1
+        for page_number in range(1, number_of_pages):
+            if page_number != 1:
+                request_url = url + f'page-{page_number}'
+                response = self.session.get(request_url)
 
-        for page_number in range(0, number_of_pages):
-            page_number += 1
-            if page_number == 1:
-                pass
-            else:
-                response = self.session.get(url + f'page-{page_number}')
-                soup = BeautifulSoup(response.content, 'html.parser')
-
-            unparsed_posts = soup.find_all('li', attrs={'id': re.compile('fc-post-\d+')})
-            thread_title = soup.find('div', class_='titleBar').text.strip().split('\n')[0]
+            soup = BeautifulSoup(response.content, 'html.parser')
+            unparsed_posts = [i for i in soup.find_all('article') if i.get('data-author')]
+            print(f"{len(unparsed_posts)} posts found.\n")
+            thread_title = soup.find('meta', {"property": "og:title"}).get('content')
+            print(f'Scraping thread: "{thread_title}" at {url}')
 
             for post in unparsed_posts:
                 p = Post(post, thread_title)
@@ -159,7 +145,7 @@ class ForumScraper:
         response = self.session.post('https://teslamotorsclub.com/tmc/search/search',
                                      data=form_data, headers={'x-requested-with': 'XmlHttpRequest'})
 
-        redirect_target = response.json().get('_redirectTarget')
+        redirect_target = response.json().get('redirect')
 
         if not redirect_target:
             raise ValueError('A redirect target is not incl' +
@@ -181,9 +167,10 @@ class ForumScraper:
                 response = self.session.get(url)
                 soup = BeautifulSoup(response.content, 'html.parser')
 
-            search_results_list = soup.find('ol', class_='searchResultsList').find_all('li')
+            print(redirect_target)
+            search_results_list = soup.find('div', class_='p-body-pageContent').find_all('li')
             for search_result in search_results_list:
-                if 'thread' in search_result.get('class'):
+                if 'thread' in search_result.get('class', ''):
                     title = search_result.find('h3', class_='title').text
                     thread_id = search_result.find('h3', class_='title').find('a').get('href')
                     thread = Thread(title, self.scrape_post_by_id(thread_id=thread_id))
@@ -191,8 +178,16 @@ class ForumScraper:
                     #  Figure this out and return to it. Where was this introduced?
                     search_results.append(thread)
                 else:
-                    post_id = search_result.find('h3', class_='title').find('a').get('href')
-                    post_id = post_id[6:-1]
+                    try:
+                        post_id = search_result.find(
+                            'h3', class_='contentRow-title').find('a').get('href').split('-')[-1]
+                        print(post_id)
+                        assert post_id.isdigit()
+                    except AttributeError:
+                        continue
+                    except AssertionError:
+                        #  thread, not a post
+                        continue
                     post = self.scrape_post_by_id(post_id=post_id)
                     search_results.append(post)
 

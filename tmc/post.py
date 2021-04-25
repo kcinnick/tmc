@@ -1,32 +1,33 @@
+import re
+
 from bs4 import BeautifulSoup, Tag
 import datetime
 import requests
 
+
 class Post:
-    def __init__(self, post: Tag = None, thread_title: str = None, db_entry = None):
+    def __init__(self, post: Tag = None, thread_title: str = None, db_entry=None):
         if post:
             self.build_from_post(post, thread_title)
         else:
             self.build_from_db(db_entry)
-    
+
     def build_from_post(self, post, thread_title):
-        self.id = int(post.find('a', class_='datePermalink').get('href').split('/')[1])
+        try:
+            self.id = int(
+                re.search('\/posts\/(\d+)\/', str(post)).group(1)
+            )
+        except AttributeError:
+            raise AttributeError
+        print("Post ID is ", self.id)
         self.thread_title = thread_title.replace("'", "\\'").replace('"', '\\"').split('Discussion in ')[0].strip()
-        self.username = post.find('div', class_='messageUserInfo').find('a', class_='username').text
-        try:
-            self.posted_at = post.find('span', class_='DateTime').text
-        except AttributeError:  # sometimes posted_at is hidden behind an abbr tag
-            self.posted_at = post.find('abbr', class_='DateTime').text
-        try:
-            self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
-        except ValueError:
-            self.posted_at = post.find('span', class_='DateTime').get('title')
-            self.posted_at = datetime.datetime.strptime(self.posted_at, '%b %d, %Y at %I:%M %p')
+        self.username = post.find('a', class_='username').text
+        self.posted_at = post.find('time').get('datetime')
 
         self.reply_ids = []
 
         post, self.reply_ids = self.clean_message(post)
-        self.message = post.find('div', class_='messageContent').text.replace('â†‘', '\n"').replace(
+        self.message = post.find('div', class_='bbWrapper').text.replace('â†‘', '\n"').replace(
             'Click to expand...', '\n"').strip()
         self.media = self.get_media(post)
 
@@ -38,7 +39,7 @@ class Post:
         self.helpful = output_dict.get('Helpful', 0)
 
         self.sentiment = 0
-    
+
     def build_from_db(self, db_entry):
         if type(db_entry) == dict:
             self.id = db_entry['id']
@@ -80,20 +81,21 @@ class Post:
         """
 
         iframe = post.find('iframe')
+
         if iframe:
             return iframe.get('src')
-    
+
     def clean_message(self, post):
-        quotes = post.find_all('div', class_='bbCodeBlock bbCodeQuote')
+        quotes = post.find_all('blockquote')
         replies = []
         for quote in quotes:
             replies.append(quote.extract())
-        
+
         reply_ids = []
 
         for reply in replies:
             try:
-                reply_ids.append(reply.find('a', class_='AttributionLink').get('href').split('-')[-1])
+                reply_ids.append(reply.find('a', class_='bbCodeBlock-sourceJump').get('href').split('=')[-1])
             except AttributeError:
                 continue
 
@@ -104,14 +106,15 @@ class Post:
         Gets sentiment data of post.
         """
         if not google_api_key:
-            raise(ValueError('Calling this method requires a valid google_api_key for the Cloud Natural Voice API.'))
-        r = session.post(f'https://language.googleapis.com/v1/documents:analyzeSentiment?fields=documentSentiment%2Clanguage&key={google_api_key}',
-                         json={"document":{"content": self.message,
-                                           "type": "PLAIN_TEXT"}
-                                           }
-        )
+            raise (ValueError('Calling this method requires a valid google_api_key for the Cloud Natural Voice API.'))
+        r = session.post(
+            f'https://language.googleapis.com/v1/documents:analyzeSentiment?fields=documentSentiment%2Clanguage&key={google_api_key}',
+            json={"document": {"content": self.message,
+                               "type": "PLAIN_TEXT"}
+                  }
+            )
         self.sentiment = r.json()
-        
+
         return
 
     def upload_to_db(self, db_connection):
@@ -136,5 +139,3 @@ class Thread(Post):
     def __init__(self, title: str, post: Tag):
         super(Thread, self).__init__()
         self.title = title
-
-
