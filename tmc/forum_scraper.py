@@ -1,7 +1,9 @@
+import pymysql
 from bs4 import BeautifulSoup
 
 from tqdm import tqdm
 
+from tmc.database import TMCDatabase
 from tmc.post import Post, Thread
 import requests
 import re
@@ -70,11 +72,8 @@ class ForumScraper:
         and returns a Post object.
         """
 
-        print(post_id)
         url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
-        print('\n81', url)
         response = self.session.get(url)
-        print(response)
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -109,7 +108,6 @@ class ForumScraper:
                 response = self.session.get(request_url)
 
             soup = BeautifulSoup(response.content, 'html.parser')
-            print(soup.prettify())
             unparsed_posts = [i for i in soup.find_all(
                 'article') if i.get('data-author')]
             print(f"{len(unparsed_posts)} posts found.\n")
@@ -181,6 +179,11 @@ class ForumScraper:
             pages = 2
 
         search_results = []
+        with open('/home/nick/PycharmProjects/tmc/credentials.txt', 'r') as f:
+            key = f.read()
+
+        connection = pymysql.Connection(user='nick', password=key,)
+        db_connection = TMCDatabase(connection)
 
         for page in range(1, int(pages)):
             if page != 1:
@@ -214,5 +217,6 @@ class ForumScraper:
                         continue
                     post = self.scrape_post_by_id(post_id=post_id)
                     search_results.append(post)
+                    post.upload_to_db(db_connection=db_connection)
 
         return search_results

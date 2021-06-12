@@ -10,12 +10,13 @@ from tmc.forum_scraper import ForumScraper
 from tmc.database import TMCDatabase
 from tmc.post import Post
 from tmc.user import User
-import pytest
+
 
 def get_session():
     session = requests.Session()
     session.headers.update({'User-Agent': 'https://github.com/kcinnick/tmc'})
     return session
+
 
 def test_user_build():
     session = get_session()
@@ -89,7 +90,7 @@ def test_message_get_sentiment():
         print('No API key found. Returning. \n')
         return
     post.get_sentiment(google_api_key=api_key)
-    print(post.sentiment)
+
     assert post.sentiment['documentSentiment']['magnitude'] == 0.6
 
 
@@ -112,31 +113,31 @@ skip_db_test_reason = (
 )
 
 
-@pytest.mark.skip(reason=skip_db_test_reason)
+# @pytest.mark.skip(reason=skip_db_test_reason)
 def test_retrieve_posts_from_database():
-    with open('tmc/credentials.txt', 'r') as f:
+    with open('/home/nick/PycharmProjects/tmc/credentials.txt', 'r') as f:
         password = f.readlines()[0].strip()
 
     import pymysql
     connection = pymysql.connect(
-        user='root', password=password,
+        user='nick', password=password,
         host='127.0.0.1',
         database='tmc',
     )
     tmc_database = TMCDatabase(connection)
     posts = tmc_database.retrieve_from_posts_database(
-        from_post_id=1, to_post_id=10, attrs='*', limit=8)
+        attrs='*', limit=8, debug=True)
     assert len(posts) == 8
 
 
-@pytest.mark.skip(reason=skip_db_test_reason)
+# @pytest.mark.skip(reason=skip_db_test_reason)
 def test_export_to_csv():
-    with open('tmc/credentials.txt', 'r') as f:
+    with open('/home/nick/PycharmProjects/tmc/credentials.txt', 'r') as f:
         password = f.read().strip()
 
     import pymysql
     connection = pymysql.connect(
-        user='root', password=password,
+        user='nick', password=password,
         host='127.0.0.1',
         database='tmc',
     )
@@ -145,7 +146,7 @@ def test_export_to_csv():
         file_name='test.csv', from_post_id=0, to_post_id=10, attrs='*')
 
 
-@pytest.mark.skip(reason=skip_db_test_reason)
+# @pytest.mark.skip(reason=skip_db_test_reason)
 def test_build_post_from_db():
     # TODO: write test!
     return

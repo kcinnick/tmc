@@ -1,10 +1,11 @@
 CREATE DATABASE tmc;
 USE tmc;
+DROP TABLE posts;
 CREATE TABLE `posts` (
 	`id` INT NOT NULL UNIQUE,
 	`thread_title` VARCHAR(200),
 	`username` VARCHAR(90) NOT NULL,
-	`posted_at` DATETIME NOT NULL,
+	`posted_at` TEXT NOT NULL,
 	`message` TEXT,
 	`media` TEXT,
 	`likes` INT,

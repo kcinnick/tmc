@@ -124,10 +124,10 @@ class Post:
         sql_statement += f"`loves`, `helpful`, `sentiment`, `in_reply_to`) VALUES ('{self.id}', '{self.thread_title}', "
         sql_statement += f"'{username}', '{self.posted_at}', '{message}',"
         sql_statement += f" {self.likes}, {self.loves}, {self.helpful}, {self.sentiment}, '{','.join(self.reply_ids)}')"
-        print(sql_statement)
-        with db_connection.cursor() as cursor:
+        db_connection.connection.cursor().execute('USE tmc;')
+        with db_connection.connection.cursor() as cursor:
             cursor.execute(sql_statement)
-            db_connection.commit()
+            db_connection.connection.commit()
         return
 
 

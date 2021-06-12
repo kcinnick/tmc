@@ -1,6 +1,6 @@
 from csv import DictWriter
 import datetime
-from tmc.forum_scraper import ForumScraper
+
 from tmc.post import Post
 from pymysql.cursors import DictCursor
 
@@ -19,8 +19,9 @@ class TMCDatabase:
         keys = kwargs.keys()
         if 'attrs' not in keys:
             kwargs['attrs'] = attrs
-        sql_statement = f"SELECT {kwargs['attrs']} FROM posts WHERE "
+        sql_statement = f"SELECT {kwargs['attrs']} FROM posts "
         if 'from_post_id' in keys:
+            sql_statement += "WHERE "
             sql_statement += f"`id` > {kwargs['from_post_id']} "
             if 'to_post_id' in keys:
                 sql_statement += f"AND `id` < {kwargs['to_post_id']}"
