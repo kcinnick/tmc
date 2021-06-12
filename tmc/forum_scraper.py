@@ -1,3 +1,5 @@
+import os
+
 import pymysql
 from bs4 import BeautifulSoup
 
@@ -168,7 +170,7 @@ class ForumScraper:
             raise ValueError(
                 'A redirect target is '
                 f'not included in the response: {response.json()}'
-                             )
+            )
 
         soup = BeautifulSoup(
             self.session.get(redirect_target).content, 'html.parser')
@@ -179,10 +181,9 @@ class ForumScraper:
             pages = 2
 
         search_results = []
-        with open('/home/nick/PycharmProjects/tmc/credentials.txt', 'r') as f:
-            key = f.read()
+        tmc_credentials = os.getenv('TMC_CREDENTIALS')
 
-        connection = pymysql.Connection(user='nick', password=key,)
+        connection = pymysql.Connection(user='nick', password=tmc_credentials, )
         db_connection = TMCDatabase(connection)
 
         for page in range(1, int(pages)):
@@ -208,7 +209,6 @@ class ForumScraper:
                         post_id = search_result.find(
                             'h3', class_='contentRow-title').find(
                             'a').get('href').split('-')[-1]
-                        print(post_id)
                         assert post_id.isdigit()
                     except AttributeError:
                         continue
@@ -217,6 +217,9 @@ class ForumScraper:
                         continue
                     post = self.scrape_post_by_id(post_id=post_id)
                     search_results.append(post)
-                    post.upload_to_db(db_connection=db_connection)
+                    try:
+                        post.upload_to_db(db_connection=db_connection)
+                    except pymysql.err.IntegrityError as e:  # duplicate entry
+                        print(e)
 
         return search_results

@@ -4,6 +4,7 @@
 """Tests for `tmc` package."""
 import os
 
+import pytest
 import requests
 from bs4 import BeautifulSoup
 from tmc.forum_scraper import ForumScraper
@@ -113,14 +114,15 @@ skip_db_test_reason = (
 )
 
 
-# @pytest.mark.skip(reason=skip_db_test_reason)
+@pytest.mark.skipif(
+    not os.getenv('TMC_CREDENTIALS'),
+    reason=skip_db_test_reason)
 def test_retrieve_posts_from_database():
-    with open('/home/nick/PycharmProjects/tmc/credentials.txt', 'r') as f:
-        password = f.readlines()[0].strip()
+    tmc_credentials = os.getenv('TMC_CREDENTIALS')
 
     import pymysql
     connection = pymysql.connect(
-        user='nick', password=password,
+        user='nick', password=tmc_credentials,
         host='127.0.0.1',
         database='tmc',
     )
@@ -130,14 +132,14 @@ def test_retrieve_posts_from_database():
     assert len(posts) == 8
 
 
-# @pytest.mark.skip(reason=skip_db_test_reason)
+@pytest.mark.skipif(
+    not os.getenv('TMC_CREDENTIALS'),
+    reason=skip_db_test_reason)
 def test_export_to_csv():
-    with open('/home/nick/PycharmProjects/tmc/credentials.txt', 'r') as f:
-        password = f.read().strip()
-
+    tmc_credentials = os.getenv('TMC_CREDENTIALS')
     import pymysql
     connection = pymysql.connect(
-        user='nick', password=password,
+        user='nick', password=tmc_credentials,
         host='127.0.0.1',
         database='tmc',
     )
@@ -146,7 +148,9 @@ def test_export_to_csv():
         file_name='test.csv', from_post_id=0, to_post_id=10, attrs='*')
 
 
-# @pytest.mark.skip(reason=skip_db_test_reason)
+@pytest.mark.skipif(
+    not os.getenv('TMC_CREDENTIALS'),
+    reason=skip_db_test_reason)
 def test_build_post_from_db():
     # TODO: write test!
     return

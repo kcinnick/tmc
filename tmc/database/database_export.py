@@ -1,11 +1,12 @@
+import os
+
 from tmc.forum_scraper import TMCDatabase
 import pymysql
 
-with open('credentials.txt', 'r') as f:
-    password = f.read().strip()
+tmc_credentials = os.getenv('TMC_CREDENTIALS')
 
 connection = pymysql.connect(
-    user='root', password=password,
+    user='root', password=tmc_credentials,
     host='127.0.0.1',
     database='tmc',
 )
