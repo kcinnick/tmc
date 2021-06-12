@@ -109,6 +109,7 @@ class ForumScraper:
                 response = self.session.get(request_url)
 
             soup = BeautifulSoup(response.content, 'html.parser')
+            print(soup.prettify())
             unparsed_posts = [i for i in soup.find_all(
                 'article') if i.get('data-author')]
             print(f"{len(unparsed_posts)} posts found.\n")
