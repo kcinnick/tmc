@@ -8,14 +8,20 @@ import requests
 from bs4 import BeautifulSoup
 from tmc.forum_scraper import ForumScraper
 from tmc.database import TMCDatabase
-from tmc.post import Post, Thread
+from tmc.post import Post
 from tmc.user import User
 import pytest
 
+def get_session():
+    session = requests.Session()
+    session.headers.update({'User-Agent': 'https://github.com/kcinnick/tmc'})
+    return session
 
 def test_user_build():
-
-    r = requests.get('https://teslamotorsclub.com/tmc/threads/model-s-delivery-update.9489/#post-167939')
+    session = get_session()
+    r = session.get(
+        'https://teslamotorsclub.com/tmc/threads/model-s-delivery-update.'
+        '9489/#post-167939')
     page = BeautifulSoup(r.content, 'html.parser')
     post = page.find('article', id='js-post-175666')
     user = User()
@@ -28,14 +34,18 @@ def test_user_build():
 
 def test_media_post_collect():
     thread_title = 'test_media_post_collect method'
-    r = requests.get('https://teslamotorsclub.com/tmc/threads/tip-how-to-open-your-charge-port-with-a-key-fob.91313/#post-2119568')
+    session = get_session()
+    r = session.get(
+        'https://teslamotorsclub.com/tmc/threads/tip-how-to-open-your-'
+        'charge-port-with-a-key-fob.91313/#post-2119568')
     page = BeautifulSoup(r.content, 'html.parser')
     post = page.find('article', id='js-post-2119568')
     p = Post(post, thread_title)
 
     assert p.id == 2119568
     assert p.username == 'AlexG'
-    assert p.media == 'https://www.youtube.com/embed/dS4y-rlp9qA?wmode=opaque&start=0'
+    assert p.media == (
+        'https://www.youtube.com/embed/dS4y-rlp9qA?wmode=opaque&start=0')
     assert p.likes == 0
     assert p.loves == 0
 
@@ -96,7 +106,13 @@ def test_clean_message():
     assert post.reply_ids == ['3741789']
 
 
-@pytest.mark.skip(reason="Skipped by default b/c it will fail if DB and credentials aren't present.")
+skip_db_test_reason = (
+    'Skipped by default b/c it will fail if DB and credentials aren\'t'
+    'present.'
+)
+
+
+@pytest.mark.skip(reason=skip_db_test_reason)
 def test_retrieve_posts_from_database():
     with open('tmc/credentials.txt', 'r') as f:
         password = f.readlines()[0].strip()
@@ -108,11 +124,12 @@ def test_retrieve_posts_from_database():
         database='tmc',
     )
     tmc_database = TMCDatabase(connection)
-    posts = tmc_database.retrieve_from_posts_database(from_post_id=1, to_post_id=10, attrs='*', limit=8)
+    posts = tmc_database.retrieve_from_posts_database(
+        from_post_id=1, to_post_id=10, attrs='*', limit=8)
     assert len(posts) == 8
 
 
-@pytest.mark.skip(reason="Skipped by default b/c it will fail if DB and credentials aren't present.")
+@pytest.mark.skip(reason=skip_db_test_reason)
 def test_export_to_csv():
     with open('tmc/credentials.txt', 'r') as f:
         password = f.read().strip()
@@ -124,10 +141,11 @@ def test_export_to_csv():
         database='tmc',
     )
     tmc_database = TMCDatabase(connection)
-    tmc_database.export_to_csv(file_name='test.csv', from_post_id=0, to_post_id=10, attrs='*')
+    tmc_database.export_to_csv(
+        file_name='test.csv', from_post_id=0, to_post_id=10, attrs='*')
 
 
-@pytest.mark.skip(reason="Skipped by default b/c it will fail if DB and credentials aren't present.")
+@pytest.mark.skip(reason=skip_db_test_reason)
 def test_build_post_from_db():
     # TODO: write test!
     return
