@@ -74,6 +74,7 @@ class ForumScraper:
         url = f'https://teslamotorsclub.com/tmc/posts/{post_id}/'
         print('\n81', url)
         response = self.session.get(url)
+        print(response)
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
