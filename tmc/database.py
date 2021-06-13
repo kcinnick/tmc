@@ -1,13 +1,22 @@
 from csv import DictWriter
 import datetime
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import os
 from tmc.post import Post
 from pymysql.cursors import DictCursor
 
 
 class TMCDatabase:
-    def __init__(self, connection):
-        self.connection = connection
+    def __init__(self):
+        connect_string = 'mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8'.format(
+            'nick', os.getenv('TMC_CREDENTIALS'), 'localhost', 3306,
+            'tmc')
+        engine = create_engine(
+            connect_string, convert_unicode=True, echo=False)
+        self.connection = engine.connect()
+        self.Session = sessionmaker(engine)
 
     def retrieve_from_posts_database(
         self, debug=False, attrs='*', build=True, **kwargs
@@ -40,7 +49,7 @@ class TMCDatabase:
             sql_statement += f" LIMIT {kwargs['limit']}"
         if debug:
             print(sql_statement)
-        with self.connection.cursor(DictCursor) as cursor:
+        with self.session.cursor(DictCursor) as cursor:
             cursor.execute(sql_statement)
             results = cursor.fetchall()
             parsed_results = []

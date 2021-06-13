@@ -1,14 +1,12 @@
-import os
+import re
 
 import pymysql
+import requests
 from bs4 import BeautifulSoup
-
 from tqdm import tqdm
 
 from tmc.database import TMCDatabase
-from tmc.post import Post, Thread
-import requests
-import re
+from tmc.post import Post
 
 
 class ForumScraper:
@@ -181,10 +179,8 @@ class ForumScraper:
             pages = 2
 
         search_results = []
-        tmc_credentials = os.getenv('TMC_CREDENTIALS')
 
-        connection = pymysql.Connection(user='nick', password=tmc_credentials, )
-        db_connection = TMCDatabase(connection)
+        tmc_database = TMCDatabase()
 
         for page in range(1, int(pages)):
             if page != 1:
@@ -218,7 +214,7 @@ class ForumScraper:
                     post = self.scrape_post_by_id(post_id=post_id)
                     search_results.append(post)
                     try:
-                        post.upload_to_db(db_connection=db_connection)
+                        post.upload_to_db(db_connection=tmc_database)
                     except pymysql.err.IntegrityError as e:  # duplicate entry
                         print(e)
 
